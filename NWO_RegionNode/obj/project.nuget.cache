@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "dgSpecHash": "Qz3pCIOXOBO/FGDrfiqhvAYvy4o1CT+foCHibE53vVFSGrB6D6cSGpATxke5W4Hl1yNcYxRKMjYWr8XLzOenow==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\sunk0\\Documents\\GitHub\\NWO_RegionNode\\NWO_RegionNode\\NWO_RegionNode.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\sunk0\\.nuget\\packages\\dotnetty.buffers\\0.7.2\\dotnetty.buffers.0.7.2.nupkg.sha512",
+    "C:\\Users\\sunk0\\.nuget\\packages\\dotnetty.codecs\\0.7.2\\dotnetty.codecs.0.7.2.nupkg.sha512",
+    "C:\\Users\\sunk0\\.nuget\\packages\\dotnetty.common\\0.7.2\\dotnetty.common.0.7.2.nupkg.sha512",
+    "C:\\Users\\sunk0\\.nuget\\packages\\dotnetty.transport\\0.7.2\\dotnetty.transport.0.7.2.nupkg.sha512",
+    "C:\\Users\\sunk0\\.nuget\\packages\\microsoft.extensions.dependencyinjection\\5.0.0\\microsoft.extensions.dependencyinjection.5.0.0.nupkg.sha512",
+    "C:\\Users\\sunk0\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\5.0.0\\microsoft.extensions.dependencyinjection.abstractions.5.0.0.nupkg.sha512",
+    "C:\\Users\\sunk0\\.nuget\\packages\\microsoft.extensions.logging\\5.0.0\\microsoft.extensions.logging.5.0.0.nupkg.sha512",
+    "C:\\Users\\sunk0\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\5.0.0\\microsoft.extensions.logging.abstractions.5.0.0.nupkg.sha512",
+    "C:\\Users\\sunk0\\.nuget\\packages\\microsoft.extensions.options\\5.0.0\\microsoft.extensions.options.5.0.0.nupkg.sha512",
+    "C:\\Users\\sunk0\\.nuget\\packages\\microsoft.extensions.primitives\\5.0.0\\microsoft.extensions.primitives.5.0.0.nupkg.sha512",
+    "C:\\Users\\sunk0\\.nuget\\packages\\system.collections.immutable\\1.5.0\\system.collections.immutable.1.5.0.nupkg.sha512",
+    "C:\\Users\\sunk0\\.nuget\\packages\\system.runtime.compilerservices.unsafe\\5.0.0\\system.runtime.compilerservices.unsafe.5.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}
