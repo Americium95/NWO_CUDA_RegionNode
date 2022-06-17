@@ -7,7 +7,7 @@ namespace NWO_RegionNode
 {
     public class Program
     {
-        static public List<User> userTable = new List<User>();
+        static public Dictionary<int,User> userTable = new Dictionary<int,User>();
 
 
         static void Main(string[] args)
