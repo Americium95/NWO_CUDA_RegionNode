@@ -19,20 +19,22 @@ public class EchoServerHandler : ChannelHandlerAdapter
 
         User Data;
         int userIndex = rcv.IndexOf("user");
-        string[] rcvData = rcv.Split(new char[] {',',':'});
-
 
         if (userIndex > -1)
         {
-            if (!Program.userTable.TryGetValue(int.Parse(rcv[userIndex + 4].ToString()), out Data))
-            {
-                Program.userTable.Add(int.Parse(rcv[userIndex + 4].ToString()), new User(0, new Vector3(0, 0, 0), 0));
+            string[] vetData = rcv.Split('{', '}')[1].Split(',');
+            
+            int userNum = int.Parse(rcv.Substring(userIndex + 4,rcv.IndexOf('{') - (userIndex + 5) ));
 
-                Data = Program.userTable[int.Parse(rcv[userIndex + 4].ToString())];
+            if (!Program.userTable.TryGetValue(userNum, out Data))
+            {
+                Program.userTable.Add(userNum, new User(0, new Vector3(0, 0, 0), 0));
+
+                Data = Program.userTable[userNum];
             }
             else
             {
-                Data.position = new Vector3(int.Parse(rcvData[1]), int.Parse(rcvData[2]), int.Parse(rcvData[3]));
+                Data.position = new Vector3(int.Parse(vetData[0]), int.Parse(vetData[1]), int.Parse(vetData[2]));
             }
         }
 
@@ -43,11 +45,11 @@ public class EchoServerHandler : ChannelHandlerAdapter
 
         StringBuilder std = new StringBuilder();
 
+        
         foreach (var userData in Program.userTable)
         {
-            std.Append("{");
             std.Append(userData.Key);
-            std.Append(",");
+            std.Append("{");
             std.Append(userData.Value.position.X);
             std.Append(",");
             std.Append(userData.Value.position.Y);
