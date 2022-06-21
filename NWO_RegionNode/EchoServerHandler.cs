@@ -28,13 +28,15 @@ public class EchoServerHandler : ChannelHandlerAdapter
 
             if (!Program.userTable.TryGetValue(userNum, out Data))
             {
-                Program.userTable.Add(userNum, new User(0, new Vector3(0, 0, 0), 0));
+                Program.userTable.Add(userNum, new User(0, new Vector3(int.Parse(vetData[0]), int.Parse(vetData[1]), int.Parse(vetData[2])), int.Parse(vetData[3]), int.Parse(vetData[4])) );
 
                 Data = Program.userTable[userNum];
             }
             else
             {
                 Data.position = new Vector3(int.Parse(vetData[0]), int.Parse(vetData[1]), int.Parse(vetData[2]));
+                Data.speed = int.Parse(vetData[3]);
+                Data.rot = int.Parse(vetData[4]);
             }
         }
 
@@ -45,7 +47,8 @@ public class EchoServerHandler : ChannelHandlerAdapter
 
         StringBuilder std = new StringBuilder();
 
-        
+        std.Append("UD{");
+
         foreach (var userData in Program.userTable)
         {
             std.Append(userData.Key);
@@ -55,8 +58,13 @@ public class EchoServerHandler : ChannelHandlerAdapter
             std.Append(userData.Value.position.Y);
             std.Append(",");
             std.Append(userData.Value.position.Z);
+            std.Append(",");
+            std.Append(userData.Value.speed);
+            std.Append(",");
+            std.Append(userData.Value.rot);
             std.Append("}");
         }
+        std.Append("}");
 
         IByteBuffer buf = Unpooled.CopiedBuffer(Encoding.UTF8.GetBytes(std.ToString()));
 
