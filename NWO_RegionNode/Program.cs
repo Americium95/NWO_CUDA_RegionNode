@@ -51,8 +51,6 @@ namespace NWO_RegionNode
                 }
                 std.Append("}");
 
-                Thread.Sleep(20);
-
                 IByteBuffer buf = Unpooled.CopiedBuffer(Encoding.UTF8.GetBytes(std.ToString()));
 
                 NetuserData.Value.IChannel.WriteAsync(buf);

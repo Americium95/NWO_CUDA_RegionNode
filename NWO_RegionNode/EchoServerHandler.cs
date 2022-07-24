@@ -44,7 +44,7 @@ public class EchoServerHandler : ChannelHandlerAdapter
 
         //context.WriteAsync("aaaa");
 
-        StringBuilder std = new StringBuilder();
+        /*StringBuilder std = new StringBuilder();
 
         std.Append("UD{");
 
@@ -67,7 +67,7 @@ public class EchoServerHandler : ChannelHandlerAdapter
 
         Thread.Sleep(20);
 
-        IByteBuffer buf = Unpooled.CopiedBuffer(Encoding.UTF8.GetBytes(std.ToString()));
+        IByteBuffer buf = Unpooled.CopiedBuffer(Encoding.UTF8.GetBytes(std.ToString()));*/
 
         //context.WriteAsync(buf);
 
