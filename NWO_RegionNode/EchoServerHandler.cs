@@ -15,8 +15,6 @@ public class EchoServerHandler : ChannelHandlerAdapter
         Console.WriteLine("수신:" + rcv);
 
 
-
-
         User Data;
         int userIndex = rcv.IndexOf("user");
 
@@ -28,12 +26,13 @@ public class EchoServerHandler : ChannelHandlerAdapter
 
             if (!Program.userTable.TryGetValue(userNum, out Data))
             {
-                Program.userTable.Add(userNum, new User(0, new Vector3(int.Parse(vetData[0]), int.Parse(vetData[1]), int.Parse(vetData[2])), int.Parse(vetData[3]), int.Parse(vetData[4])) );
+                Program.userTable.Add(userNum, new User(context,0, new Vector3(int.Parse(vetData[0]), int.Parse(vetData[1]), int.Parse(vetData[2])), int.Parse(vetData[3]), int.Parse(vetData[4])) );
 
                 Data = Program.userTable[userNum];
             }
             else
             {
+                Data.IChannel = context;
                 Data.position = new Vector3(int.Parse(vetData[0]), int.Parse(vetData[1]), int.Parse(vetData[2]));
                 Data.speed = int.Parse(vetData[3]);
                 Data.rot = int.Parse(vetData[4]);
@@ -43,7 +42,7 @@ public class EchoServerHandler : ChannelHandlerAdapter
         
 
 
-        //context.WriteAsync("dtd");
+        //context.WriteAsync("aaaa");
 
         StringBuilder std = new StringBuilder();
 
@@ -66,9 +65,11 @@ public class EchoServerHandler : ChannelHandlerAdapter
         }
         std.Append("}");
 
+        Thread.Sleep(20);
+
         IByteBuffer buf = Unpooled.CopiedBuffer(Encoding.UTF8.GetBytes(std.ToString()));
 
-        context.WriteAsync(buf);
+        //context.WriteAsync(buf);
 
         //Console.WriteLine("송신:"+buf.ToString(Encoding.UTF8));
     }
