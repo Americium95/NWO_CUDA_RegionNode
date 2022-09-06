@@ -13,8 +13,23 @@ public class EchoServerHandler : ChannelHandlerAdapter
 
         string rcv = buffer.ToString(Encoding.UTF8).Substring(2);
         Console.WriteLine("수신:" + buffer.GetByte(0) + "," + buffer.GetByte(1) + "," + buffer.GetByte(2) + "," + buffer.GetByte(3) + "," + buffer.GetByte(4) + "," + buffer.GetByte(5) + "," + buffer.GetByte(6) + "," + buffer.GetByte(7));
+        
+        
+        User Data;
+        //유저 인덱스
+        int userIndex = BitConverter.ToInt16(new byte[]{buffer.GetByte(0),buffer.GetByte(1)},0);
+
+        //위치데이터 구성
+        Data.position = new Vector3(
+            0, 
+            0, 
+            0;
+        //속도데이터 구성
+
+        //각정보 구성
 
 
+        //레거시 코드
         User Data;
         int userIndex = rcv.IndexOf("user");
 
