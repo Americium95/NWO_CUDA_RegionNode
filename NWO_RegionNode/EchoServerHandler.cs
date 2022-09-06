@@ -12,7 +12,7 @@ public class EchoServerHandler : ChannelHandlerAdapter
         var buffer = message as IByteBuffer;
 
         string rcv = buffer.ToString(Encoding.UTF8).Substring(2);
-        Console.WriteLine("수신:" + rcv);
+        Console.WriteLine("수신:" + buffer.GetByte(0) + "," + buffer.GetByte(1) + "," + buffer.GetByte(2) + "," + buffer.GetByte(3) + "," + buffer.GetByte(4) + "," + buffer.GetByte(5) + "," + buffer.GetByte(6) + "," + buffer.GetByte(7));
 
 
         User Data;
