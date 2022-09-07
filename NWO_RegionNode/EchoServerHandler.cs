@@ -14,45 +14,45 @@ public class EchoServerHandler : ChannelHandlerAdapter
         string rcv = buffer.ToString(Encoding.UTF8).Substring(2);
         Console.WriteLine("수신:" + buffer.GetByte(0) + "," + buffer.GetByte(1) + "," + buffer.GetByte(2) + "," + buffer.GetByte(3) + "," + buffer.GetByte(4) + "," + buffer.GetByte(5) + "," + buffer.GetByte(6) + "," + buffer.GetByte(7));
         
-        
-        User Data;
-        //유저 인덱스
-        int userIndex = BitConverter.ToInt16(new byte[]{buffer.GetByte(0),buffer.GetByte(1)},0);
-
-        //위치데이터 구성
-        Data.position = new Vector3(
-            0, 
-            0, 
-            0;
-        //속도데이터 구성
-
-        //각정보 구성
-
-
-        //레거시 코드
-        User Data;
-        int userIndex = rcv.IndexOf("user");
-
-        if (userIndex > -1)
+        //위치정보 정밀 동기화
+        if(buffer.GetByte(2)==2&&buffer.GetByte(3)==1)
         {
-            string[] vetData = rcv.Split('{', '}')[1].Split(',');
+            User Data;
+            //유저 인덱스
+            int userIndex = BitConverter.ToInt16(new byte[]{buffer.GetByte(3),buffer.GetByte(4)},0);
+
+
+            //위치데이터 구성
+            Vector3 UserPosition=new Vector3(
+                new byte[]{buffer.GetByte(5),buffer.GetByte(6)}, 
+                new byte[]{buffer.GetByte(7),buffer.GetByte(8)}, 
+                new byte[]{buffer.GetByte(9),buffer.GetByte(10)});
+
+            //속도데이터 구성
+            int speed = BitConverter.ToInt16(new byte[]{buffer.GetByte(11),buffer.GetByte(12)});
             
-            int userNum = int.Parse(rcv.Substring(userIndex + 4,rcv.IndexOf('{') - (userIndex + 5) ));
+            //각정보
+            int rot = BitConverter.ToInt16(new byte[]{buffer.GetByte(13),buffer.GetByte(14)});
 
-            if (!Program.userTable.TryGetValue(userNum, out Data))
+            //데이터 반영
+            if (!Program.userTable.TryGetValue(userIndex, out Data))
             {
-                Program.userTable.Add(userNum, new User(context,0, new Vector3(int.Parse(vetData[0]), int.Parse(vetData[1]), int.Parse(vetData[2])), int.Parse(vetData[3]), int.Parse(vetData[4])) );
+                Program.userTable.Add(userIndex, new User(context,0, UserPosition , speed, rot ) );
 
-                Data = Program.userTable[userNum];
+                Data = Program.userTable[userIndex];
             }
             else
             {
                 Data.IChannel = context;
-                Data.position = new Vector3(int.Parse(vetData[0]), int.Parse(vetData[1]), int.Parse(vetData[2]));
-                Data.speed = int.Parse(vetData[3]);
-                Data.rot = int.Parse(vetData[4]);
+                Data.position = UserPosition;
+                Data.speed = speed;
+                Data.rot = rot;
             }
         }
+
+        //속도데이터 구성
+
+        //각정보 구성
 
         
 
