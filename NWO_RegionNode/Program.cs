@@ -41,18 +41,18 @@ namespace NWO_RegionNode
                     List<byte> packet = new List<byte> { 0x02, 0x01 };
 
                     //유저넘버 구성
-                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.id));
+                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.Key));
 
                     //위치데이터 구성
-                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.position.x));
-                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.position.y));
-                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.position.z));
+                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.Value.position.x));
+                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.Value.position.y));
+                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.Value.position.z));
 
                     //속도데이터 구성
-                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.speed));
+                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.Value.speed));
 
                     //각도 구성
-                    packet.Add(NetuserData.rot);
+                    packet.Add(NetuserData.Value.rot);
 
                     //전송
                     NetuserData.Value.IChannel.WriteAsync(Unpooled.CopiedBuffer(packet.ToArray()));
