@@ -13,6 +13,9 @@ namespace NWO_RegionNode
         static public Dictionary<int,User> userTable = new Dictionary<int,User>();
 
 
+        //정밀동기화 주기 카운터
+        int NetWorkRoutine=0;
+
         static void Main(string[] args)
         {
             RunServerAsync();
@@ -28,33 +31,39 @@ namespace NWO_RegionNode
         //락스텝 처리
         static void LockStep(Object source,ElapsedEventArgs e)
         {
-            foreach (var NetuserData in Program.userTable)
-            {
-                StringBuilder std = new StringBuilder();
 
-                std.Append("UD{");
-
-                foreach (var userData in Program.userTable)
+            //위치정보 정밀 동기화
+                if(NetWorkRoutine>4)
                 {
-                    std.Append(userData.Key);
-                    std.Append("{");
-                    std.Append(userData.Value.position.X);
-                    std.Append(",");
-                    std.Append(userData.Value.position.Y);
-                    std.Append(",");
-                    std.Append(userData.Value.position.Z);
-                    std.Append(",");
-                    std.Append(userData.Value.speed);
-                    std.Append(",");
-                    std.Append(userData.Value.rot);
-                    std.Append("}");
+                    foreach (var NetuserData in Program.userTable)
+                    {
+                        //헤더 구성
+                        List<byte> packet = new List<byte> { 0x02, 0x01 };
+
+                        //유저넘버 구성
+                        packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.id));
+
+                        //위치데이터 구성
+                        packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.position.x));
+                        packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.position.y));
+                        packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.position.z));
+
+                        //속도데이터 구성
+                        packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.speed));
+
+                        packet.Add(NetuserData.rot);
+
+                        //전송
+                        IByteBuffer buf = Unpooled.CopiedBuffer(packet.ToArray());
+
+                        NetuserData.Value.IChannel.WriteAsync(buf);
+                    }
+                    //정밀동기화 주기 카운터 초기화
+                    NetWorkRoutine=0;
+                }else{
+                    
                 }
-                std.Append("}");
-
-                IByteBuffer buf = Unpooled.CopiedBuffer(Encoding.UTF8.GetBytes(std.ToString()));
-
-                NetuserData.Value.IChannel.WriteAsync(buf);
-            }
+            NetWorkRoutine++;
         }
 
         static async Task RunServerAsync()

@@ -67,16 +67,10 @@ public class EchoServerHandler : ChannelHandlerAdapter
             int speed = BitConverter.ToInt16(new byte[]{buffer.GetByte(6),buffer.GetByte(7)});
 
             //데이터 반영
-            if (!Program.userTable.TryGetValue(userIndex, out Data))
-            {
-                Program.userTable.Add(userIndex, new User(context,0, new Vector3(0,0,0) , speed, rot ) );
-
-                Data = Program.userTable[userIndex];
-            }
-            else
+            if (Program.userTable.TryGetValue(userIndex, out Data))
             {
                 Data.IChannel = context;
-                Data.position = UserPosition+new Vector3(Math.Sin(rot),0,Math.Cos(rot))*speed;
+                Data.position = Data.position+new Vector3(Math.Sin(rot),0,Math.Cos(rot))*speed;
                 Data.speed = speed;
                 Data.rot = rot;
             }
