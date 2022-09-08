@@ -24,9 +24,9 @@ public class EchoServerHandler : ChannelHandlerAdapter
 
             //위치데이터 구성
             Vector3 UserPosition=new Vector3(
-                new byte[]{buffer.GetByte(5),buffer.GetByte(6)}, 
-                new byte[]{buffer.GetByte(7),buffer.GetByte(8)}, 
-                new byte[]{buffer.GetByte(9),buffer.GetByte(10)});
+                BitConverter.ToInt16(new byte[]{buffer.GetByte(5),buffer.GetByte(6)}), 
+                BitConverter.ToInt16(new byte[]{buffer.GetByte(7),buffer.GetByte(8)}), 
+                BitConverter.ToInt16(new byte[]{buffer.GetByte(9),buffer.GetByte(10)}));
 
             //속도데이터 구성
             int speed = BitConverter.ToInt16(new byte[]{buffer.GetByte(11),buffer.GetByte(12)});
