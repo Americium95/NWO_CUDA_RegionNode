@@ -14,7 +14,7 @@ namespace NWO_RegionNode
 
 
         //정밀동기화 주기 카운터
-        int NetWorkRoutine=0;
+        static int NetWorkRoutine=0;
 
         static void Main(string[] args)
         {
