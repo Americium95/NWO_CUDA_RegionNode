@@ -21,7 +21,7 @@ namespace NWO_RegionNode
             RunServerAsync();
 
             //락스텝 동기화 루프
-            System.Timers.Timer LockStepTimer = new System.Timers.Timer(200);
+            System.Timers.Timer LockStepTimer = new System.Timers.Timer(100);
             LockStepTimer.Elapsed += LockStep;
             LockStepTimer.AutoReset = true;
             LockStepTimer.Enabled =true;
@@ -33,36 +33,52 @@ namespace NWO_RegionNode
         {
 
             //위치정보 정밀 동기화
-                if(NetWorkRoutine>4)
+            if(NetWorkRoutine>4)
+            {
+                foreach (var NetuserData in Program.userTable)
                 {
-                    foreach (var NetuserData in Program.userTable)
-                    {
-                        //헤더 구성
-                        List<byte> packet = new List<byte> { 0x02, 0x01 };
+                    //헤더 구성
+                    List<byte> packet = new List<byte> { 0x02, 0x01 };
 
-                        //유저넘버 구성
-                        packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.id));
+                    //유저넘버 구성
+                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.id));
 
-                        //위치데이터 구성
-                        packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.position.x));
-                        packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.position.y));
-                        packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.position.z));
+                    //위치데이터 구성
+                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.position.x));
+                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.position.y));
+                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.position.z));
 
-                        //속도데이터 구성
-                        packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.speed));
+                    //속도데이터 구성
+                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.speed));
 
-                        packet.Add(NetuserData.rot);
+                    //각도 구성
+                    packet.Add(NetuserData.rot);
 
-                        //전송
-                        IByteBuffer buf = Unpooled.CopiedBuffer(packet.ToArray());
-
-                        NetuserData.Value.IChannel.WriteAsync(buf);
-                    }
-                    //정밀동기화 주기 카운터 초기화
-                    NetWorkRoutine=0;
-                }else{
-                    
+                    //전송
+                    NetuserData.Value.IChannel.WriteAsync(Unpooled.CopiedBuffer(packet.ToArray()));
                 }
+                //정밀동기화 주기 카운터 초기화
+                NetWorkRoutine=0;
+            //위치정보 근사 동기화
+            }else{
+                foreach (var NetuserData in Program.userTable)
+                {
+                    //헤더 구성
+                    List<byte> packet = new List<byte> { 0x02, 0x02 };
+
+                    //유저넘버 구성
+                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.id));
+
+                    //속도데이터 구성
+                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.speed));
+
+                    //각도 구성
+                    packet.Add(NetuserData.rot);
+
+                    //전송
+                    NetuserData.Value.IChannel.WriteAsync(Unpooled.CopiedBuffer(packet.ToArray()));
+                }
+            }
             NetWorkRoutine++;
         }
 
