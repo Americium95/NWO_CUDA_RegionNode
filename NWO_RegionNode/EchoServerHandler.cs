@@ -12,7 +12,7 @@ public class EchoServerHandler : ChannelHandlerAdapter
         var buffer = message as IByteBuffer;
 
         string rcv = buffer.ToString(Encoding.UTF8).Substring(2);
-        Console.WriteLine("수신:" + buffer.GetByte(0) + "," + buffer.GetByte(1) + "," + buffer.GetByte(2) + "," + buffer.GetByte(3) + "," + buffer.GetByte(4) + "," + buffer.GetByte(5) + "," + buffer.GetByte(6) + "," + buffer.GetByte(7));
+        //Console.WriteLine("수신:" + buffer.GetByte(0) + "," + buffer.GetByte(1) + "," + buffer.GetByte(2) + "," + buffer.GetByte(3) + "," + buffer.GetByte(4) + "," + buffer.GetByte(5) + "," + buffer.GetByte(6) + "," + buffer.GetByte(7));
         
         //위치정보 정밀 동기화
         if(buffer.GetByte(2)==2&&buffer.GetByte(3)==1)
@@ -27,7 +27,7 @@ public class EchoServerHandler : ChannelHandlerAdapter
                 BitConverter.ToInt16(new byte[]{buffer.GetByte(6),buffer.GetByte(7)}), 
                 BitConverter.ToInt16(new byte[]{buffer.GetByte(8),buffer.GetByte(9)}), 
                 BitConverter.ToInt16(new byte[]{buffer.GetByte(10),buffer.GetByte(11)}));
-
+            Console.WriteLine(UserPosition);
             //속도데이터 구성
             int speed = BitConverter.ToInt16(new byte[]{buffer.GetByte(12),buffer.GetByte(13)});
             
@@ -59,13 +59,15 @@ public class EchoServerHandler : ChannelHandlerAdapter
         {
             User Data;
             //유저 인덱스
-            int userIndex = BitConverter.ToInt16(new byte[]{buffer.GetByte(3),buffer.GetByte(4)},0);
+            int userIndex = BitConverter.ToInt16(new byte[]{buffer.GetByte(4),buffer.GetByte(5)},0);
 
-            //각정보
-            byte rot = buffer.GetByte(5);
+
 
             //속도데이터 구성
             int speed = BitConverter.ToInt16(new byte[]{buffer.GetByte(6),buffer.GetByte(7)});
+            
+            //각정보
+            byte rot = buffer.GetByte(8);
 
             //데이터 반영
             if (Program.userTable.TryGetValue(userIndex, out Data))

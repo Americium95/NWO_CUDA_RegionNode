@@ -33,7 +33,7 @@ namespace NWO_RegionNode
         {
 
             //위치정보 정밀 동기화
-            if(NetWorkRoutine>4)
+            if(NetWorkRoutine>5)
             {
                 foreach (var NetuserData in Program.userTable)
                 {
