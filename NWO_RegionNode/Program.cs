@@ -44,9 +44,9 @@ namespace NWO_RegionNode
                     packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.Key));
 
                     //위치데이터 구성
-                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.Value.position.x));
-                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.Value.position.y));
-                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.Value.position.z));
+                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.Value.position.X));
+                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.Value.position.Y));
+                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.Value.position.Z));
 
                     //속도데이터 구성
                     packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.Value.speed));
@@ -67,13 +67,13 @@ namespace NWO_RegionNode
                     List<byte> packet = new List<byte> { 0x02, 0x02 };
 
                     //유저넘버 구성
-                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.id));
+                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.Key));
 
                     //속도데이터 구성
-                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.speed));
+                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.Value.speed));
 
                     //각도 구성
-                    packet.Add(NetuserData.rot);
+                    packet.Add(NetuserData.Value.rot);
 
                     //전송
                     NetuserData.Value.IChannel.WriteAsync(Unpooled.CopiedBuffer(packet.ToArray()));
