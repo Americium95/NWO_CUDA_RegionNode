@@ -19,20 +19,20 @@ public class EchoServerHandler : ChannelHandlerAdapter
         {
             User Data;
             //유저 인덱스
-            int userIndex = BitConverter.ToInt16(new byte[]{buffer.GetByte(3),buffer.GetByte(4)},0);
+            int userIndex = BitConverter.ToInt16(new byte[]{buffer.GetByte(4),buffer.GetByte(5)},0);
 
 
             //위치데이터 구성
             Vector3 UserPosition=new Vector3(
-                BitConverter.ToInt16(new byte[]{buffer.GetByte(5),buffer.GetByte(6)}), 
-                BitConverter.ToInt16(new byte[]{buffer.GetByte(7),buffer.GetByte(8)}), 
-                BitConverter.ToInt16(new byte[]{buffer.GetByte(9),buffer.GetByte(10)}));
+                BitConverter.ToInt16(new byte[]{buffer.GetByte(6),buffer.GetByte(7)}), 
+                BitConverter.ToInt16(new byte[]{buffer.GetByte(8),buffer.GetByte(9)}), 
+                BitConverter.ToInt16(new byte[]{buffer.GetByte(10),buffer.GetByte(11)}));
 
             //속도데이터 구성
-            int speed = BitConverter.ToInt16(new byte[]{buffer.GetByte(11),buffer.GetByte(12)});
+            int speed = BitConverter.ToInt16(new byte[]{buffer.GetByte(12),buffer.GetByte(13)});
             
             //각정보
-            byte rot = buffer.GetByte(13);
+            byte rot = buffer.GetByte(14);
 
             //데이터 반영
             if (!Program.userTable.TryGetValue(userIndex, out Data))
