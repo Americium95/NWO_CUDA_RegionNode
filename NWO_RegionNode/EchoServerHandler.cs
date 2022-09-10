@@ -21,23 +21,27 @@ public class EchoServerHandler : ChannelHandlerAdapter
             //유저 인덱스
             int userIndex = BitConverter.ToInt16(new byte[]{buffer.GetByte(4),buffer.GetByte(5)},0);
 
+            //타일 위치데이터 구성
+            Vector2 tilePosition=new Vector2(
+                BitConverter.ToInt16(System.BitConverter.GetBytes(buffer.GetByte(6),buffer.GetByte(7))),
+                BitConverter.ToInt16(System.BitConverter.GetBytes(buffer.GetByte(8),buffer.GetByte(9))));
 
             //위치데이터 구성
             Vector3 UserPosition=new Vector3(
-                BitConverter.ToInt16(new byte[]{buffer.GetByte(6),buffer.GetByte(7)}), 
-                BitConverter.ToInt16(new byte[]{buffer.GetByte(8),buffer.GetByte(9)}), 
-                BitConverter.ToInt16(new byte[]{buffer.GetByte(10),buffer.GetByte(11)}));
+                BitConverter.ToInt16(new byte[]{buffer.GetByte(10),buffer.GetByte(11)}), 
+                BitConverter.ToInt16(new byte[]{buffer.GetByte(12),buffer.GetByte(13)}), 
+                BitConverter.ToInt16(new byte[]{buffer.GetByte(14),buffer.GetByte(15)}));
             Console.WriteLine(UserPosition);
             //속도데이터 구성
-            int speed = BitConverter.ToInt16(new byte[]{buffer.GetByte(12),buffer.GetByte(13)});
+            int speed = BitConverter.ToInt16(new byte[]{buffer.GetByte(16),buffer.GetByte(17)});
             
             //각정보
-            byte rot = buffer.GetByte(14);
+            byte rot = buffer.GetByte(18);
 
             //데이터 반영
             if (!Program.userTable.TryGetValue(userIndex, out Data))
             {
-                Program.userTable.Add(userIndex, new User(context,0, UserPosition , speed, rot ) );
+                Program.userTable.Add(userIndex, new User(context,0, tilePosition, UserPosition , speed, rot ) );
 
                 Data = Program.userTable[userIndex];
 
@@ -73,7 +77,7 @@ public class EchoServerHandler : ChannelHandlerAdapter
             if (Program.userTable.TryGetValue(userIndex, out Data))
             {
                 Data.IChannel = context;
-                Data.position = Data.position+new Vector3(MathF.Sin(rot),0,MathF.Cos(rot))*speed;
+                Data.position = Data.position+new Vector3(MathF.Sin(rot),0,MathF.Cos(rot))*speed/10;
                 Data.speed = speed;
                 Data.rot = rot;
             }

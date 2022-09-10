@@ -43,6 +43,10 @@ namespace NWO_RegionNode
                     //유저넘버 구성
                     packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.Key));
 
+                    //타일 위치데이터 구성
+                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.Value.tilePosition.X));
+                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.Value.tilePosition.Y));
+
                     //위치데이터 구성
                     packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.Value.position.X));
                     packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.Value.position.Y));
