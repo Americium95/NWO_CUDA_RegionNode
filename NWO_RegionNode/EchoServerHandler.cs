@@ -23,8 +23,8 @@ public class EchoServerHandler : ChannelHandlerAdapter
 
             //타일 위치데이터 구성
             Vector2 tilePosition=new Vector2(
-                BitConverter.ToInt16(System.BitConverter.GetBytes(buffer.GetByte(6),buffer.GetByte(7))),
-                BitConverter.ToInt16(System.BitConverter.GetBytes(buffer.GetByte(8),buffer.GetByte(9))));
+                BitConverter.ToInt16(System.BitConverter.GetBytes(new byte[]{buffer.GetByte(6),buffer.GetByte(7)}),
+                BitConverter.ToInt16(System.BitConverter.GetBytes(new byte[]{buffer.GetByte(8),buffer.GetByte(9)})));
 
             //위치데이터 구성
             Vector3 UserPosition=new Vector3(
