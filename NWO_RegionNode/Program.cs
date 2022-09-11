@@ -33,54 +33,73 @@ namespace NWO_RegionNode
         {
 
             //위치정보 정밀 동기화
+
+            /*
+            *최소주기 기준인0.5s로 설정됨
+            */
+
             if(NetWorkRoutine>5)
             {
-                foreach (var NetuserData in Program.userTable)
+                foreach (var NetUserData in Program.userTable)
                 {
                     //헤더 구성
                     List<byte> packet = new List<byte> { 0x02, 0x01 };
 
                     //유저넘버 구성
-                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.Key));
+                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Key));
 
                     //타일 위치데이터 구성
-                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.Value.tilePosition.X));
-                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.Value.tilePosition.Y));
+                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Value.tilePosition.X));
+                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Value.tilePosition.Y));
 
                     //위치데이터 구성
-                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.Value.position.X));
-                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.Value.position.Y));
-                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.Value.position.Z));
+                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Value.position.X));
+                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Value.position.Y));
+                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Value.position.Z));
 
                     //속도데이터 구성
-                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.Value.speed));
+                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Value.speed));
 
                     //각도 구성
-                    packet.Add(NetuserData.Value.rot);
+                    packet.Add(NetUserData.Value.rot);
 
-                    //전송
-                    NetuserData.Value.IChannel.WriteAsync(Unpooled.CopiedBuffer(packet.ToArray()));
+                
+                    //브로드케스트
+                    foreach (var broadcastUserData in Program.userTable)
+                    {
+                        if(NetUserData.id==broadcastUserData.id)
+                        {
+                            broadcastUserData.Value.IChannel.WriteAsync(Unpooled.CopiedBuffer(packet.ToArray()));
+                        }
+                    }
+
                 }
                 //정밀동기화 주기 카운터 초기화
                 NetWorkRoutine=0;
             //위치정보 근사 동기화
             }else{
-                foreach (var NetuserData in Program.userTable)
+                foreach (var NetUserData in Program.userTable)
                 {
                     //헤더 구성
                     List<byte> packet = new List<byte> { 0x02, 0x02 };
 
                     //유저넘버 구성
-                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.Key));
+                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Key));
 
                     //속도데이터 구성
-                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetuserData.Value.speed));
+                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Value.speed));
 
                     //각도 구성
-                    packet.Add(NetuserData.Value.rot);
+                    packet.Add(NetUserData.Value.rot);
 
-                    //전송
-                    NetuserData.Value.IChannel.WriteAsync(Unpooled.CopiedBuffer(packet.ToArray()));
+                    //브로드케스트
+                    foreach (var broadcastUserData in Program.userTable)
+                    {
+                        if(NetUserData.id==broadcastUserData.id)
+                        {
+                            broadcastUserData.Value.IChannel.WriteAsync(Unpooled.CopiedBuffer(packet.ToArray()));
+                        }
+                    }
                 }
             }
             NetWorkRoutine++;
