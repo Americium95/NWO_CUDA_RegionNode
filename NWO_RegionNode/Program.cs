@@ -67,7 +67,7 @@ namespace NWO_RegionNode
                     //브로드케스트
                     foreach (var broadcastUserData in Program.userTable)
                     {
-                        if(NetUserData.id==broadcastUserData.id)
+                        if(NetUserData.Key==broadcastUserData.Key)
                         {
                             broadcastUserData.Value.IChannel.WriteAsync(Unpooled.CopiedBuffer(packet.ToArray()));
                         }
@@ -95,7 +95,7 @@ namespace NWO_RegionNode
                     //브로드케스트
                     foreach (var broadcastUserData in Program.userTable)
                     {
-                        if(NetUserData.id==broadcastUserData.id)
+                        if(NetUserData.Key==broadcastUserData.Key)
                         {
                             broadcastUserData.Value.IChannel.WriteAsync(Unpooled.CopiedBuffer(packet.ToArray()));
                         }
