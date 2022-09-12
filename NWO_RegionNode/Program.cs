@@ -40,39 +40,41 @@ namespace NWO_RegionNode
 
             if(NetWorkRoutine>5)
             {
-                foreach (var NetUserData in Program.userTable)
+                foreach (var broadcastUserData in Program.userTable)
                 {
+                    int DataCount=0;
                     //헤더 구성
                     List<byte> packet = new List<byte> { 0x02, 0x01 };
-
-                    //유저넘버 구성
-                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Key));
-
-                    //타일 위치데이터 구성
-                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Value.tilePosition.X));
-                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Value.tilePosition.Y));
-
-                    //위치데이터 구성
-                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Value.position.X));
-                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Value.position.Y));
-                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Value.position.Z));
-
-                    //속도데이터 구성
-                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Value.speed));
-
-                    //각도 구성
-                    packet.Add(NetUserData.Value.rot);
-
-                
-                    //브로드케스트
-                    foreach (var broadcastUserData in Program.userTable)
+                    foreach (var NetUserData in Program.userTable)
                     {
-                        if(NetUserData.Key==broadcastUserData.Key)
+                        //if(NetUserData.Key!=broadcastUserData.Key)
                         {
-                            broadcastUserData.Value.IChannel.WriteAsync(Unpooled.CopiedBuffer(packet.ToArray()));
+                            //유저넘버 구성
+                            packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Key));
+
+                            //타일 위치데이터 구성
+                            packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Value.tilePosition.X));
+                            packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Value.tilePosition.Y));
+
+                            //위치데이터 구성
+                            packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Value.position.X));
+                            packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Value.position.Y));
+                            packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Value.position.Z));
+
+                            //속도데이터 구성
+                            packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Value.speed));
+
+                            //각도 구성
+                            packet.Add(NetUserData.Value.rot);
+                            DataCount++;
                         }
                     }
 
+                    //데이터 개수를 보냄
+                    packet.InsertRange(2,System.BitConverter.GetBytes((Int16)DataCount));
+
+                    //브로드케스트
+                    broadcastUserData.Value.IChannel.WriteAsync(Unpooled.CopiedBuffer(packet.ToArray()));
                 }
                 //정밀동기화 주기 카운터 초기화
                 NetWorkRoutine=0;
