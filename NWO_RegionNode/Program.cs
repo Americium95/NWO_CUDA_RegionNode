@@ -43,10 +43,13 @@ namespace NWO_RegionNode
                 foreach (var broadcastUserData in Program.userTable)
                 {
                     int DataCount=0;
+
                     //헤더 구성
                     List<byte> packet = new List<byte> { 0x02, 0x01 };
+
                     foreach (var NetUserData in Program.userTable)
                     {
+                        //본인 제외
                         //if(NetUserData.Key!=broadcastUserData.Key)
                         {
                             //유저넘버 구성
@@ -80,28 +83,35 @@ namespace NWO_RegionNode
                 NetWorkRoutine=0;
             //위치정보 근사 동기화
             }else{
-                foreach (var NetUserData in Program.userTable)
+                foreach (var broadcastUserData in Program.userTable)
                 {
+                    int DataCount=0;
+
                     //헤더 구성
                     List<byte> packet = new List<byte> { 0x02, 0x02 };
 
-                    //유저넘버 구성
-                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Key));
-
-                    //속도데이터 구성
-                    packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Value.speed));
-
-                    //각도 구성
-                    packet.Add(NetUserData.Value.rot);
-
-                    //브로드케스트
-                    foreach (var broadcastUserData in Program.userTable)
+                    foreach (var NetUserData in Program.userTable)
                     {
-                        if(NetUserData.Key==broadcastUserData.Key)
+                        //본인 제외
+                        //if(NetUserData.Key!=broadcastUserData.Key)
                         {
-                            broadcastUserData.Value.IChannel.WriteAsync(Unpooled.CopiedBuffer(packet.ToArray()));
+
+                        //유저넘버 구성
+                        packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Key));
+
+                        //속도데이터 구성
+                        packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Value.speed));
+
+                        //각도 구성
+                        packet.Add(NetUserData.Value.rot);
                         }
                     }
+
+                    //데이터 개수를 보냄
+                    packet.InsertRange(2,System.BitConverter.GetBytes((Int16)DataCount));
+
+                    //브로드케스트
+                    broadcastUserData.Value.IChannel.WriteAsync(Unpooled.CopiedBuffer(packet.ToArray()));
                 }
             }
             NetWorkRoutine++;
