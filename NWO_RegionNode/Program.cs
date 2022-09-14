@@ -77,7 +77,7 @@ namespace NWO_RegionNode
                     }
 
                     //데이터 개수를 보냄
-                    packet.InsertRange(2,System.BitConverter.GetBytes((Int16)DataCount));
+                    packet.InsertRange(4,System.BitConverter.GetBytes((Int16)DataCount));
 
                     //브로드케스트
                     broadcastUserData.Value.IChannel.WriteAsync(Unpooled.CopiedBuffer(packet.ToArray()));
@@ -114,7 +114,7 @@ namespace NWO_RegionNode
                     }
 
                     //데이터 개수를 보냄
-                    packet.InsertRange(2,System.BitConverter.GetBytes((Int16)DataCount));
+                    packet.InsertRange(4,System.BitConverter.GetBytes((Int16)DataCount));
 
                     //브로드케스트
                     broadcastUserData.Value.IChannel.WriteAsync(Unpooled.CopiedBuffer(packet.ToArray()));
