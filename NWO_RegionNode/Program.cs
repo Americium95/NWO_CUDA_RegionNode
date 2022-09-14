@@ -48,7 +48,7 @@ namespace NWO_RegionNode
                     List<byte> packet = new List<byte> { 0x02, 0x01 };
 
                     //유저id 등록
-                    packet.AddRange(System.BitConverter.GetBytes((Int16)broadcastUserData.Key));
+                    packet.AddRange(System.BitConverter.GetBytes((Int16)broadcastUserData.Value.id));
 
                     foreach (var NetUserData in Program.userTable)
                     {

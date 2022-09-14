@@ -18,7 +18,7 @@ public class EchoServerHandler : ChannelHandlerAdapter
         if(buffer.GetByte(0)==2&&buffer.GetByte(1)==1)
         {
             User Data;
-            //유저 인덱스
+            //유저 인덱스(고유번호)
             int userIndex = BitConverter.ToInt16(new byte[]{buffer.GetByte(2),buffer.GetByte(3)},0);
 
             //타일 위치데이터 구성
@@ -41,7 +41,7 @@ public class EchoServerHandler : ChannelHandlerAdapter
             //데이터 반영
             if (!Program.userTable.TryGetValue(userIndex, out Data))
             {
-                Program.userTable.Add(userIndex, new User(context,0, tilePosition, UserPosition , speed, rot ) );
+                Program.userTable.Add(userIndex, new User(context,userIndex, tilePosition, UserPosition , speed, rot ) );
 
                 Data = Program.userTable[userIndex];
 
