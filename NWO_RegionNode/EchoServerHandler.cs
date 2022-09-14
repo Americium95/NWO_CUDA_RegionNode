@@ -15,25 +15,25 @@ public class EchoServerHandler : ChannelHandlerAdapter
         //Console.WriteLine("수신:" + buffer.GetByte(0) + "," + buffer.GetByte(1) + "," + buffer.GetByte(2) + "," + buffer.GetByte(3) + "," + buffer.GetByte(4) + "," + buffer.GetByte(5) + "," + buffer.GetByte(6) + "," + buffer.GetByte(7));
         
         //위치정보 정밀 동기화
-        if(buffer.GetByte(2)==2&&buffer.GetByte(3)==1)
+        if(buffer.GetByte(0)==2&&buffer.GetByte(1)==1)
         {
             User Data;
             //유저 인덱스
-            int userIndex = BitConverter.ToInt16(new byte[]{buffer.GetByte(4),buffer.GetByte(5)},0);
+            int userIndex = BitConverter.ToInt16(new byte[]{buffer.GetByte(2),buffer.GetByte(3)},0);
 
             //타일 위치데이터 구성
             Vector2 tilePosition=new Vector2(
-                BitConverter.ToInt16(new byte[]{buffer.GetByte(6),buffer.GetByte(7)}),
-                BitConverter.ToInt16(new byte[]{buffer.GetByte(8),buffer.GetByte(9)}));
+                BitConverter.ToInt16(new byte[]{buffer.GetByte(4),buffer.GetByte(5)}),
+                BitConverter.ToInt16(new byte[]{buffer.GetByte(6),buffer.GetByte(7)}));
 
             //위치데이터 구성
             Vector3 UserPosition=new Vector3(
+                BitConverter.ToInt16(new byte[]{buffer.GetByte(8),buffer.GetByte(9)}), 
                 BitConverter.ToInt16(new byte[]{buffer.GetByte(10),buffer.GetByte(11)}), 
-                BitConverter.ToInt16(new byte[]{buffer.GetByte(12),buffer.GetByte(13)}), 
-                BitConverter.ToInt16(new byte[]{buffer.GetByte(14),buffer.GetByte(15)}));
+                BitConverter.ToInt16(new byte[]{buffer.GetByte(12),buffer.GetByte(13)}));
             Console.WriteLine(UserPosition);
             //속도데이터 구성
-            int speed = BitConverter.ToInt16(new byte[]{buffer.GetByte(16),buffer.GetByte(17)});
+            int speed = BitConverter.ToInt16(new byte[]{buffer.GetByte(14),buffer.GetByte(15)});
             
             //각정보
             byte rot = buffer.GetByte(18);
@@ -59,16 +59,16 @@ public class EchoServerHandler : ChannelHandlerAdapter
         }
 
         //위치정보 근사 동기화
-        if(buffer.GetByte(2)==2&&buffer.GetByte(3)==2)
+        if(buffer.GetByte(2)==0&&buffer.GetByte(3)==1)
         {
             User Data;
             //유저 인덱스
-            int userIndex = BitConverter.ToInt16(new byte[]{buffer.GetByte(4),buffer.GetByte(5)},0);
+            int userIndex = BitConverter.ToInt16(new byte[]{buffer.GetByte(2),buffer.GetByte(3)},0);
 
 
 
             //속도데이터 구성
-            int speed = BitConverter.ToInt16(new byte[]{buffer.GetByte(6),buffer.GetByte(7)});
+            int speed = BitConverter.ToInt16(new byte[]{buffer.GetByte(4),buffer.GetByte(5)});
             
             //각정보
             byte rot = buffer.GetByte(8);

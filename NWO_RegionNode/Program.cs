@@ -47,6 +47,9 @@ namespace NWO_RegionNode
                     //헤더 구성
                     List<byte> packet = new List<byte> { 0x02, 0x01 };
 
+                    //유저id 등록
+                    packet.AddRange(System.BitConverter.GetBytes((Int16)broadcastUserData.Key));
+
                     foreach (var NetUserData in Program.userTable)
                     {
                         //본인 제외
@@ -90,6 +93,9 @@ namespace NWO_RegionNode
                     //헤더 구성
                     List<byte> packet = new List<byte> { 0x02, 0x02 };
 
+                    //유저id 등록
+                    packet.AddRange(System.BitConverter.GetBytes((Int16)broadcastUserData.Key));
+                    
                     foreach (var NetUserData in Program.userTable)
                     {
                         //본인 제외
@@ -133,7 +139,6 @@ namespace NWO_RegionNode
                     .ChildHandler(new ActionChannelInitializer<ISocketChannel>(channel =>
                     {
                         IChannelPipeline pipeline = channel.Pipeline;
-                        pipeline.AddLast("framing-enc", new LengthFieldPrepender(2));
 
                         pipeline.AddLast("echo", new EchoServerHandler());
                     }));
