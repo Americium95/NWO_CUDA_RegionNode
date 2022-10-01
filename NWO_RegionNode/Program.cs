@@ -50,6 +50,7 @@ namespace NWO_RegionNode
                     //유저id 등록
                     packet.AddRange(System.BitConverter.GetBytes((Int16)broadcastUserData.Value.id));
 
+                    //브로드케스트
                     foreach (var NetUserData in Program.userTable)
                     {
                         //본인 제외

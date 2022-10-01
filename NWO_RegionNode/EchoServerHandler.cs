@@ -36,7 +36,7 @@ public class EchoServerHandler : ChannelHandlerAdapter
             int speed = BitConverter.ToInt16(new byte[]{buffer.GetByte(14),buffer.GetByte(15)});
             
             //각정보
-            byte rot = buffer.GetByte(18);
+            byte rot = buffer.GetByte(16);
 
             //데이터 반영
             if (!Program.userTable.TryGetValue(userIndex, out Data))
@@ -71,7 +71,7 @@ public class EchoServerHandler : ChannelHandlerAdapter
             int speed = BitConverter.ToInt16(new byte[]{buffer.GetByte(4),buffer.GetByte(5)});
             
             //각정보
-            byte rot = buffer.GetByte(8);
+            byte rot = buffer.GetByte(6);
 
             //데이터 반영
             if (Program.userTable.TryGetValue(userIndex, out Data))
