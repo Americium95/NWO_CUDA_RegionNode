@@ -6,7 +6,7 @@ using System.Text;
 
 public class EchoServerHandler : ChannelHandlerAdapter
 {
-
+    //데이터 수신자
     public override void ChannelRead(IChannelHandlerContext context, object message)
     {
         var buffer = message as IByteBuffer;

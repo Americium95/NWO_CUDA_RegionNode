@@ -40,6 +40,9 @@ namespace NWO_RegionNode
 
             if(NetWorkRoutine>5)
             {
+                //cuda로 데이터 적재
+
+
                 foreach (var broadcastUserData in Program.userTable)
                 {
                     int DataCount=0;
@@ -50,6 +53,10 @@ namespace NWO_RegionNode
                     //유저id 등록
                     packet.AddRange(System.BitConverter.GetBytes((Int16)broadcastUserData.Value.id));
 
+                    //cuda연산
+
+
+                    
                     //브로드케스트
                     foreach (var NetUserData in Program.userTable)
                     {
