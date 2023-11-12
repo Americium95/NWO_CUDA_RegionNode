@@ -1,7 +1,7 @@
 ﻿using DotNetty.Transport.Channels;
 using System.Numerics;
 
-
+//유저 데이터 클레스
 public class User
 {
     public IChannelHandlerContext IChannel;
