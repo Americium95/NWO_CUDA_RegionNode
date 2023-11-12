@@ -59,7 +59,7 @@ public class EchoServerHandler : ChannelHandlerAdapter
         }
 
         //위치정보 근사 동기화
-        if(buffer.GetByte(2)==0&&buffer.GetByte(3)==1)
+        if(buffer.GetByte(0)==2&&buffer.GetByte(1)==2)
         {
             User Data;
             //유저 인덱스

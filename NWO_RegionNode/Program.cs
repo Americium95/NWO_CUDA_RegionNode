@@ -80,7 +80,7 @@ namespace NWO_RegionNode
                     //데이터 개수를 보냄
                     packet.InsertRange(4,System.BitConverter.GetBytes((Int16)DataCount));
 
-                    //브로드케스트
+                    //송신
                     broadcastUserData.Value.IChannel.WriteAsync(Unpooled.CopiedBuffer(packet.ToArray()));
                 }
                 //정밀동기화 주기 카운터 초기화
