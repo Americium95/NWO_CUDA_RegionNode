@@ -1,6 +1,7 @@
 ﻿using DotNetty.Buffers;
 using DotNetty.Transport.Channels;
 using NWO_RegionNode;
+using System.Diagnostics;
 using System.Numerics;
 using System.Text;
 
@@ -31,7 +32,7 @@ public class EchoServerHandler : ChannelHandlerAdapter
                 BitConverter.ToInt16(new byte[]{buffer.GetByte(8),buffer.GetByte(9)}), 
                 BitConverter.ToInt16(new byte[]{buffer.GetByte(10),buffer.GetByte(11)}), 
                 BitConverter.ToInt16(new byte[]{buffer.GetByte(12),buffer.GetByte(13)}));
-            Console.WriteLine(UserPosition);
+
             //속도데이터 구성
             int speed = BitConverter.ToInt16(new byte[]{buffer.GetByte(14),buffer.GetByte(15)});
             
@@ -44,7 +45,6 @@ public class EchoServerHandler : ChannelHandlerAdapter
                 Program.userTable.Add(userIndex, new User(context,userIndex, tilePosition, UserPosition , speed, rot ) );
 
                 Data = Program.userTable[userIndex];
-
                 Data.position = UserPosition;
                 Data.speed = speed;
                 Data.rot = rot;
@@ -69,6 +69,8 @@ public class EchoServerHandler : ChannelHandlerAdapter
 
             //속도데이터 구성
             int speed = BitConverter.ToInt16(new byte[]{buffer.GetByte(4),buffer.GetByte(5)});
+
+            Console.WriteLine(speed);
             
             //각정보
             byte rot = buffer.GetByte(6);

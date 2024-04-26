@@ -21,7 +21,7 @@ namespace NWO_RegionNode
             RunServerAsync();
 
             //락스텝 동기화 루프
-            System.Timers.Timer LockStepTimer = new System.Timers.Timer(100);
+            System.Timers.Timer LockStepTimer = new System.Timers.Timer(50);
             LockStepTimer.Elapsed += LockStep;
             LockStepTimer.AutoReset = true;
             LockStepTimer.Enabled =true;
@@ -118,8 +118,13 @@ namespace NWO_RegionNode
 
                         //각도 구성
                         packet.Add(NetUserData.Value.rot);
+
+
+
+                        Console.WriteLine(NetUserData.Value.position);
                         }
                     }
+
 
                     //데이터 개수를 보냄
                     packet.InsertRange(4,System.BitConverter.GetBytes((Int16)DataCount));
@@ -151,7 +156,7 @@ namespace NWO_RegionNode
                         pipeline.AddLast("echo", new EchoServerHandler());
                     }));
 
-                IChannel bootstrapChannel = await bootstrap.BindAsync(29100);
+                IChannel bootstrapChannel = await bootstrap.BindAsync(29001);
 
                 while (true)
                 {
