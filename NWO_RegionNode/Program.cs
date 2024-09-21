@@ -1,20 +1,12 @@
-﻿using DotNetty.Buffers;
-using DotNetty.Codecs;
-using DotNetty.Transport.Bootstrapping;
-using DotNetty.Transport.Channels;
-using DotNetty.Transport.Channels.Sockets;
-using System.Text;
-using System.Timers;
-
-namespace NWO_RegionNode
+﻿namespace NWO_RegionNode
 {
     public class Program
     {
-        static public Dictionary<int,User> userTable = new Dictionary<int,User>();
+        static public Dictionary<int, User> userTable = new Dictionary<int, User>();
 
 
         //정밀동기화 주기 카운터
-        static int NetWorkRoutine=0;
+        static int NetWorkRoutine = 0;
 
         static void Main(string[] args)
         {
@@ -24,12 +16,12 @@ namespace NWO_RegionNode
             System.Timers.Timer LockStepTimer = new System.Timers.Timer(50);
             LockStepTimer.Elapsed += LockStep;
             LockStepTimer.AutoReset = true;
-            LockStepTimer.Enabled =true;
+            LockStepTimer.Enabled = true;
             Console.ReadLine();
         }
 
         //락스텝 처리
-        static void LockStep(Object source,ElapsedEventArgs e)
+        static void LockStep(Object source, ElapsedEventArgs e)
         {
 
             //위치정보 정밀 동기화
@@ -38,14 +30,14 @@ namespace NWO_RegionNode
             *최소주기 기준인0.5s로 설정됨
             */
 
-            if(NetWorkRoutine>5)
+            if (NetWorkRoutine > 5)
             {
                 //cuda로 데이터 적재
 
 
                 foreach (var broadcastUserData in Program.userTable)
                 {
-                    int DataCount=0;
+                    int DataCount = 0;
 
                     //헤더 구성
                     List<byte> packet = new List<byte> { 0x02, 0x01 };
@@ -56,13 +48,16 @@ namespace NWO_RegionNode
                     //cuda연산
 
 
-                    
+
                     //브로드케스트
                     foreach (var NetUserData in Program.userTable)
                     {
                         //본인 제외
                         //if(NetUserData.Key!=broadcastUserData.Key)
                         {
+                            //거리 비교
+                            //if (DistanceSquared(NetUserData.Value.tilePosition, NetUserData.Value.tilePosition) < 2 && DistanceSquared(NetUserData.Value.position) < 200)
+
                             //유저넘버 구성
                             packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Key));
 
@@ -85,49 +80,52 @@ namespace NWO_RegionNode
                     }
 
                     //데이터 개수를 보냄
-                    packet.InsertRange(4,System.BitConverter.GetBytes((Int16)DataCount));
+                    packet.InsertRange(4, System.BitConverter.GetBytes((Int16)DataCount));
 
                     //송신
                     broadcastUserData.Value.IChannel.WriteAsync(Unpooled.CopiedBuffer(packet.ToArray()));
                 }
                 //정밀동기화 주기 카운터 초기화
-                NetWorkRoutine=0;
+                NetWorkRoutine = 0;
+            }
             //위치정보 근사 동기화
-            }else{
+            else
+            {
                 foreach (var broadcastUserData in Program.userTable)
                 {
-                    int DataCount=0;
+                    int DataCount = 0;
 
                     //헤더 구성
                     List<byte> packet = new List<byte> { 0x02, 0x02 };
 
                     //유저id 등록
-                    packet.AddRange(System.BitConverter.GetBytes((Int16)broadcastUserData.Key));
-                    
+                    packet.AddRange(System.BitConverter.GetBytes((Int16)broadcastUserData.Value.id));
+
                     foreach (var NetUserData in Program.userTable)
                     {
                         //본인 제외
                         //if(NetUserData.Key!=broadcastUserData.Key)
                         {
 
-                        //유저넘버 구성
-                        packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Key));
-
-                        //속도데이터 구성
-                        packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Value.speed));
-
-                        //각도 구성
-                        packet.Add(NetUserData.Value.rot);
+                            //유저넘버 구성
+                            packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Key));
 
 
+                            //속도데이터 구성
+                            packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Value.speed));
 
-                        Console.WriteLine(NetUserData.Value.position);
+                            //각도 구성
+                            packet.Add(NetUserData.Value.rot);
+                            DataCount++;
+
+
+                            Console.WriteLine(NetUserData.Value.position);
                         }
                     }
 
 
                     //데이터 개수를 보냄
-                    packet.InsertRange(4,System.BitConverter.GetBytes((Int16)DataCount));
+                    packet.InsertRange(4, System.BitConverter.GetBytes((Int16)DataCount));
 
                     //브로드케스트
                     broadcastUserData.Value.IChannel.WriteAsync(Unpooled.CopiedBuffer(packet.ToArray()));
@@ -156,7 +154,7 @@ namespace NWO_RegionNode
                         pipeline.AddLast("echo", new EchoServerHandler());
                     }));
 
-                IChannel bootstrapChannel = await bootstrap.BindAsync(29001);
+                IChannel bootstrapChannel = await bootstrap.BindAsync(29100);
 
                 while (true)
                 {

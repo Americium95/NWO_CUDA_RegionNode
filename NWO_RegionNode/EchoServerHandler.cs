@@ -1,9 +1,4 @@
-﻿using DotNetty.Buffers;
-using DotNetty.Transport.Channels;
-using NWO_RegionNode;
-using System.Diagnostics;
-using System.Numerics;
-using System.Text;
+﻿using NWO_RegionNode;
 
 public class EchoServerHandler : ChannelHandlerAdapter
 {
@@ -14,35 +9,35 @@ public class EchoServerHandler : ChannelHandlerAdapter
 
         string rcv = buffer.ToString(Encoding.UTF8).Substring(2);
         //Console.WriteLine("수신:" + buffer.GetByte(0) + "," + buffer.GetByte(1) + "," + buffer.GetByte(2) + "," + buffer.GetByte(3) + "," + buffer.GetByte(4) + "," + buffer.GetByte(5) + "," + buffer.GetByte(6) + "," + buffer.GetByte(7));
-        
+
         //위치정보 정밀 동기화
-        if(buffer.GetByte(0)==2&&buffer.GetByte(1)==1)
+        if (buffer.GetByte(0) == 2 && buffer.GetByte(1) == 1)
         {
             User Data;
             //유저 인덱스(구분자)
-            int userIndex = BitConverter.ToInt16(new byte[]{buffer.GetByte(2),buffer.GetByte(3)},0);
+            int userIndex = BitConverter.ToInt16(new byte[] { buffer.GetByte(2), buffer.GetByte(3) }, 0);
 
             //타일 위치데이터 구성
-            Vector2 tilePosition=new Vector2(
-                BitConverter.ToInt16(new byte[]{buffer.GetByte(4),buffer.GetByte(5)}),
-                BitConverter.ToInt16(new byte[]{buffer.GetByte(6),buffer.GetByte(7)}));
+            Vector2 tilePosition = new Vector2(
+                BitConverter.ToInt16(new byte[] { buffer.GetByte(4), buffer.GetByte(5) }),
+                BitConverter.ToInt16(new byte[] { buffer.GetByte(6), buffer.GetByte(7) }));
 
             //위치데이터 구성
-            Vector3 UserPosition=new Vector3(
-                BitConverter.ToInt16(new byte[]{buffer.GetByte(8),buffer.GetByte(9)}), 
-                BitConverter.ToInt16(new byte[]{buffer.GetByte(10),buffer.GetByte(11)}), 
-                BitConverter.ToInt16(new byte[]{buffer.GetByte(12),buffer.GetByte(13)}));
+            Vector3 UserPosition = new Vector3(
+                BitConverter.ToInt16(new byte[] { buffer.GetByte(8), buffer.GetByte(9) }),
+                BitConverter.ToInt16(new byte[] { buffer.GetByte(10), buffer.GetByte(11) }),
+                BitConverter.ToInt16(new byte[] { buffer.GetByte(12), buffer.GetByte(13) }));
 
             //속도데이터 구성
-            int speed = BitConverter.ToInt16(new byte[]{buffer.GetByte(14),buffer.GetByte(15)});
-            
+            int speed = BitConverter.ToInt16(new byte[] { buffer.GetByte(14), buffer.GetByte(15) });
+
             //각정보
             byte rot = buffer.GetByte(16);
 
             //데이터 반영
             if (!Program.userTable.TryGetValue(userIndex, out Data))
             {
-                Program.userTable.Add(userIndex, new User(context,userIndex, tilePosition, UserPosition , speed, rot ) );
+                Program.userTable.Add(userIndex, new User(context, userIndex, tilePosition, UserPosition, speed, rot));
 
                 Data = Program.userTable[userIndex];
                 Data.position = UserPosition;
@@ -59,27 +54,27 @@ public class EchoServerHandler : ChannelHandlerAdapter
         }
 
         //위치정보 근사 동기화
-        if(buffer.GetByte(0)==2&&buffer.GetByte(1)==2)
+        if (buffer.GetByte(0) == 2 && buffer.GetByte(1) == 2)
         {
             User Data;
             //유저 인덱스
-            int userIndex = BitConverter.ToInt16(new byte[]{buffer.GetByte(2),buffer.GetByte(3)},0);
+            int userIndex = BitConverter.ToInt16(new byte[] { buffer.GetByte(2), buffer.GetByte(3) }, 0);
 
 
 
             //속도데이터 구성
-            int speed = BitConverter.ToInt16(new byte[]{buffer.GetByte(4),buffer.GetByte(5)});
+            int speed = BitConverter.ToInt16(new byte[] { buffer.GetByte(4), buffer.GetByte(5) });
 
             Console.WriteLine(speed);
-            
+
             //각정보
-            byte rot = buffer.GetByte(6);
+            float rot = ((float)buffer.GetByte(6)) * 1.4f;
 
             //데이터 반영
             if (Program.userTable.TryGetValue(userIndex, out Data))
             {
                 Data.IChannel = context;
-                Data.position = Data.position+new Vector3(MathF.Sin(rot),0,MathF.Cos(rot))*speed/10;
+                Data.position = Data.position + new Vector3(MathF.Sin(rot), 0, MathF.Cos(rot)) * speed / 2;
                 Data.speed = speed;
                 Data.rot = rot;
             }
