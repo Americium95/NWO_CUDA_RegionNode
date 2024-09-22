@@ -13,7 +13,7 @@
             RunServerAsync();
 
             //락스텝 동기화 루프
-            System.Timers.Timer LockStepTimer = new System.Timers.Timer(50);
+            System.Timers.Timer LockStepTimer = new System.Timers.Timer(100);
             LockStepTimer.Elapsed += LockStep;
             LockStepTimer.AutoReset = true;
             LockStepTimer.Enabled = true;
@@ -24,13 +24,13 @@
         static void LockStep(Object source, ElapsedEventArgs e)
         {
 
-            //위치정보 정밀 동기화
+            //위치정보 동기화
 
             /*
             *최소주기 기준인0.5s로 설정됨
             */
 
-            if (NetWorkRoutine > 5)
+            if (NetWorkRoutine > 3)
             {
                 //cuda로 데이터 적재
 
@@ -117,9 +117,6 @@
                             //각도 구성
                             packet.Add(NetUserData.Value.rot);
                             DataCount++;
-
-
-                            Console.WriteLine(NetUserData.Value.position);
                         }
                     }
 
@@ -127,7 +124,7 @@
                     //데이터 개수를 보냄
                     packet.InsertRange(4, System.BitConverter.GetBytes((Int16)DataCount));
 
-                    //브로드케스트
+                    //송신
                     broadcastUserData.Value.IChannel.WriteAsync(Unpooled.CopiedBuffer(packet.ToArray()));
                 }
             }

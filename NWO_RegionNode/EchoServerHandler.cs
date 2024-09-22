@@ -68,13 +68,13 @@ public class EchoServerHandler : ChannelHandlerAdapter
             Console.WriteLine(speed);
 
             //각정보
-            float rot = ((float)buffer.GetByte(6)) * 1.4f;
+            float rot = buffer.GetByte(6);
 
             //데이터 반영
             if (Program.userTable.TryGetValue(userIndex, out Data))
             {
                 Data.IChannel = context;
-                Data.position = Data.position + new Vector3(MathF.Sin(rot), 0, MathF.Cos(rot)) * speed / 2;
+                //Data.position = Data.position + new Vector3(MathF.Sin((float)rot*1.4f* MathF.PI / 180), 0, MathF.Cos((float)rot * 1.4f* MathF.PI / 180)) * speed / 10;
                 Data.speed = speed;
                 Data.rot = rot;
             }
