@@ -1,4 +1,8 @@
-﻿using NWO_RegionNode;
+﻿using DotNetty.Buffers;
+using DotNetty.Transport.Channels;
+using NWO_RegionNode;
+using System.Numerics;
+using System.Text;
 
 public class EchoServerHandler : ChannelHandlerAdapter
 {
@@ -30,6 +34,7 @@ public class EchoServerHandler : ChannelHandlerAdapter
 
             //속도데이터 구성
             int speed = BitConverter.ToInt16(new byte[] { buffer.GetByte(14), buffer.GetByte(15) });
+
 
             //각정보
             byte rot = buffer.GetByte(16);
@@ -65,10 +70,9 @@ public class EchoServerHandler : ChannelHandlerAdapter
             //속도데이터 구성
             int speed = BitConverter.ToInt16(new byte[] { buffer.GetByte(4), buffer.GetByte(5) });
 
-            Console.WriteLine(speed);
 
             //각정보
-            float rot = buffer.GetByte(6);
+            byte rot = buffer.GetByte(6);
 
             //데이터 반영
             if (Program.userTable.TryGetValue(userIndex, out Data))

@@ -1,4 +1,7 @@
 ﻿//유저 데이터 클레스
+using DotNetty.Transport.Channels;
+using System.Numerics;
+
 public class User
 {
     public IChannelHandlerContext IChannel;

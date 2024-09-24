@@ -1,7 +1,8 @@
 {
   "profiles": {
     "newProfile1": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "nativeDebugging": false
     }
   }
 }
