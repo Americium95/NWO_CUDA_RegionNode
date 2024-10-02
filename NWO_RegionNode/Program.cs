@@ -17,7 +17,7 @@ namespace NWO_RegionNode
         unsafe public static extern int cudaMemCopy(float4[] a, int arraySize);
 
         [DllImport("CudaRuntime1.dll", CallingConvention = CallingConvention.Cdecl)]
-        unsafe public static extern IntPtr exportCppFunctionAdd(float4[] dst, float4 start, int arraySize);
+        unsafe public static extern IntPtr exportCppFunctionAdd(float[] dst, float4 start, int arraySize);
 
         [DllImport("CudaRuntime1.dll", CallingConvention = CallingConvention.Cdecl)]
         unsafe public static extern int cudaMemFree();
@@ -34,35 +34,35 @@ namespace NWO_RegionNode
 
             float4[] a = new float4[arraySize]
             {
-                new float4(1, 2, 3, 0),
-                new float4(4, 5, 6, 0),
-                new float4(7, 8, 9, 0),
-                new float4(10, 11, 12, 0),
-                new float4(13, 14, 15, 0)
+                new float4(1, 3, 3, 0),
+                new float4(1, 2, 6, 0),
+                new float4(1, 2, 9, 0),
+                new float4(1, 2, 12, 0),
+                new float4(1, 2, 15, 0)
             };
 
             float4[] b = new float4[arraySize]
             {
-            new float4(15, 14, 13, 0),
-            new float4(12, 11, 10, 0),
+            new float4(15, 14, 5, 0),
+            new float4(1, 2, 5, 0),
             new float4(9, 8, 7, 0),
             new float4(6, 5, 4, 0),
             new float4(3, 2, 1, 0)
             };
 
-            float4[] c = new float4[arraySize];
+            float[] c = new float[arraySize];
 
 
             //vram등록
             cudaMemCopy(a, arraySize);
             //연산,결과
-            IntPtr resultPtr = exportCppFunctionAdd(c, b[0], arraySize);
-            resultPtr = exportCppFunctionAdd(c, b[1], arraySize);
+            IntPtr resultPtr = exportCppFunctionAdd(c, b[1], arraySize);
+            //resultPtr = exportCppFunctionAdd(c, b[1], arraySize);
 
             for (int i = 0; i < arraySize; i++)
             {
-                IntPtr currentPtr = IntPtr.Add(resultPtr, i * Marshal.SizeOf(typeof(float4)));
-                c[i] = Marshal.PtrToStructure<float4>(currentPtr);
+                IntPtr currentPtr = IntPtr.Add(resultPtr, i * Marshal.SizeOf(typeof(float)));
+                c[i] = Marshal.PtrToStructure<float>(currentPtr);
             }
             //메모리 해제
             cudaMemFree();
@@ -76,7 +76,7 @@ namespace NWO_RegionNode
             // 결과 출력
             for (int i = 0; i < arraySize; ++i)
             {
-                Console.WriteLine($"{i}: {{ {a[i].x}, {a[i].y}, {a[i].z} }} , {{ {b[0].x}, {b[0].y}, {b[0].z} }} = {{ {c[i].x}, {c[i].y}, {c[i].z}, {c[i].w}  }}");
+                Console.WriteLine($"{i}: {{ {a[i].x}, {a[i].y}, {a[i].z} }} , {{ {b[1].x}, {b[1].y}, {b[1].z} }} = {{ {c[i]} }}");
             }
 
 
@@ -106,9 +106,9 @@ namespace NWO_RegionNode
                 //cuda로 데이터 적재
 
                 //vram등록
-                cudaMemCopy(userTable.Select(o => new float4(o.Value.position)).ToArray(), userTable.Count);
+                cudaMemCopy(userTable.Select(o => new float4(o.Value.tilePosition.X,o.Value.tilePosition.Y,o.Value.position.X,o.Value.position.Z)).ToArray(), userTable.Count);
                 //결과버퍼
-                float4[] c = new float4[userTable.Count];
+                float[] c = new float[userTable.Count];
 
                 foreach (var broadcastUserData in Program.userTable)
                 {
@@ -158,37 +158,49 @@ namespace NWO_RegionNode
 
                     //cuda브로드케스트
                     //cuda 연산,결과
-                    IntPtr resultPtr = exportCppFunctionAdd(c, new float4(broadcastUserData.Value.position), userTable.Count);
+                    IntPtr resultPtr = exportCppFunctionAdd(c, new float4(broadcastUserData.Value.tilePosition.X, broadcastUserData.Value.tilePosition.Y, broadcastUserData.Value.position.X, broadcastUserData.Value.position.Z), userTable.Count);
 
+
+                    int i = 0;
 
                     //데이터로부터 페킷 생성
-                    for (int i = 0; i < userTable.Count; i++)
+                    foreach (KeyValuePair<int,User> userData in userTable)
                     {
-                        IntPtr currentPtr = IntPtr.Add(resultPtr, i * Marshal.SizeOf(typeof(float4)));
-                        c[i] = Marshal.PtrToStructure<float4>(currentPtr);
+                        IntPtr currentPtr = IntPtr.Add(resultPtr, i * Marshal.SizeOf(typeof(float)));
+                        c[i] = Marshal.PtrToStructure<float>(currentPtr);
 
-                        //유저넘버 구성
-                        packet.AddRange(System.BitConverter.GetBytes((Int16)i));
+                        //거리필터
+                        //if (c[i] < 2000)
+                        {
+                            //유저넘버 구성
+                            packet.AddRange(System.BitConverter.GetBytes((Int16)userData.Key));
 
-                        //타일 위치데이터 구성
-                        packet.AddRange(System.BitConverter.GetBytes((Int16)userTable[i].tilePosition.X));
-                        packet.AddRange(System.BitConverter.GetBytes((Int16)userTable[i].tilePosition.Y));
+                            packet.AddRange(System.BitConverter.GetBytes((UInt16)userData.Value.scaffoldingIndex));
 
+                            //타일 위치데이터 구성
+                            packet.AddRange(System.BitConverter.GetBytes((Int16)userData.Value.tilePosition.X));
+                            packet.AddRange(System.BitConverter.GetBytes((Int16)userData.Value.tilePosition.Y));
 
-                        //Console.WriteLine(NetUserData.Value.tilePosition + "," + NetUserData.Value.position);
+                            //Console.WriteLine(NetUserData.Value.tilePosition + "," + NetUserData.Value.position);
 
-                        //위치데이터 구성
-                        packet.AddRange(System.BitConverter.GetBytes((Int16)c[i].x));
-                        packet.AddRange(System.BitConverter.GetBytes((Int16)c[i].y));
-                        packet.AddRange(System.BitConverter.GetBytes((Int16)c[i].z));
+                            //위치데이터 구성
+                            packet.AddRange(System.BitConverter.GetBytes((Int16)userData.Value.position.X));
+                            packet.AddRange(System.BitConverter.GetBytes((Int16)userData.Value.position.Y));
+                            packet.AddRange(System.BitConverter.GetBytes((Int16)userData.Value.position.Z));
 
-                        //속도데이터 구성
-                        packet.AddRange(System.BitConverter.GetBytes((Int16)userTable[i].speed));
+                            //속도데이터 구성
+                            packet.AddRange(System.BitConverter.GetBytes((Int16)userData.Value.speed));
 
-                        //각도 구성
-                        packet.Add(userTable[i].rot);
+                            //각도 구성
+                            packet.Add(userData.Value.rot);
 
-                        DataCount++;
+                            //수신시간 추가
+                            packet.AddRange(System.BitConverter.GetBytes((UInt16)userData.Value.receiveTime));
+
+                            DataCount++;
+                        }
+
+                        i++;
                     }
 
                     //데이터 개수를 보냄
@@ -231,6 +243,10 @@ namespace NWO_RegionNode
 
                             //각도 구성
                             packet.Add(NetUserData.Value.rot);
+
+                            //수신시간 추가
+                            packet.AddRange(System.BitConverter.GetBytes((UInt16)NetUserData.Value.receiveTime));
+
                             DataCount++;
                         }
                     }
