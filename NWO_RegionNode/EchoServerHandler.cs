@@ -72,7 +72,7 @@ public class EchoServerHandler : ChannelHandlerAdapter
             }
         }
 
-        //위치정보 근사 동기화
+        //위치정보 관성항법 동기화
         if (buffer.GetByte(0) == 2 && buffer.GetByte(1) == 2)
         {
             User Data;
@@ -103,6 +103,82 @@ public class EchoServerHandler : ChannelHandlerAdapter
             }
         }
 
+        //위치정보 정밀 동기화
+        if (buffer.GetByte(0) == 4 && buffer.GetByte(1) == 1)
+        {
+            Console.WriteLine("d");
+            MoveMent Data;
+            //오브젝트 인덱스
+            Int32 moveMentIndex = BitConverter.ToInt32(new byte[] { buffer.GetByte(2), buffer.GetByte(3), buffer.GetByte(4), buffer.GetByte(5) }, 0);
+
+            //위치데이터 구성
+            MoveMent.nwo_Vector3 UserPosition = new MoveMent.nwo_Vector3(
+                BitConverter.ToInt32(new byte[] { buffer.GetByte(6), buffer.GetByte(7), buffer.GetByte(8), buffer.GetByte(9) }),
+                BitConverter.ToInt16(new byte[] { buffer.GetByte(10), buffer.GetByte(11) }),
+                BitConverter.ToInt32(new byte[] { buffer.GetByte(12), buffer.GetByte(13), buffer.GetByte(14), buffer.GetByte(15) }));
+
+            //속도데이터 구성
+            int speed = BitConverter.ToInt16(new byte[] { buffer.GetByte(16), buffer.GetByte(17) });
+
+
+            //각정보
+            byte rot = buffer.GetByte(18);
+
+            UInt16 dataTime = BitConverter.ToUInt16(new byte[] { buffer.GetByte(19), buffer.GetByte(20) });
+
+            UInt16 delyTime = (ushort)(((UInt16)(DateTime.Now.Second * 1000 + DateTime.Now.Millisecond) - dataTime + 60000) % 60000);
+
+            //Console.WriteLine(dataTime);
+
+            //데이터 반영
+            if (!Program.moveMentTable.TryGetValue(moveMentIndex, out Data))
+            {
+                Program.moveMentTable.Add(moveMentIndex, new MoveMent(context, moveMentIndex, UserPosition, speed, rot));
+
+                Data = Program.moveMentTable[moveMentIndex];
+                Data.position = UserPosition;
+                Data.speed = speed;
+                Data.rot = rot;
+                Data.receiveTime = (UInt16)(DateTime.Now.Second * 1000 + DateTime.Now.Millisecond);
+            }
+            else
+            {
+                Data.position = UserPosition;
+                Data.speed = speed;
+                Data.rot = rot;
+                Data.receiveTime = (UInt16)(DateTime.Now.Second * 1000 + DateTime.Now.Millisecond);
+            }
+        }
+
+        //오브젝트 위치정보 관성항법 동기화
+        if (buffer.GetByte(0) == 4 && buffer.GetByte(1) == 2)
+        {
+            MoveMent Data;
+            //유저 인덱스
+            Int32 moveMentIndex = BitConverter.ToInt32(new byte[] { buffer.GetByte(2), buffer.GetByte(3), buffer.GetByte(4), buffer.GetByte(5) }, 0);
+
+
+
+            //속도데이터 구성
+            int speed = BitConverter.ToInt16(new byte[] { buffer.GetByte(6), buffer.GetByte(7) });
+
+
+            //각정보
+            byte rot = buffer.GetByte(8);
+
+            UInt16 dataTime = BitConverter.ToUInt16(new byte[] { buffer.GetByte(9), buffer.GetByte(10) });
+
+            UInt16 delyTime = (ushort)(((UInt16)(DateTime.Now.Second * 1000 + DateTime.Now.Millisecond) - dataTime + 60000) % 60000);
+
+            //데이터 반영
+            if (Program.moveMentTable.TryGetValue(moveMentIndex, out Data))
+            {
+                Data.position = Data.position;
+                Data.speed = speed;
+                Data.rot = rot;
+                Data.receiveTime = (UInt16)(DateTime.Now.Second * 1000 + DateTime.Now.Millisecond);
+            }
+        }
 
         //context.WriteAsync("aaaa");
 

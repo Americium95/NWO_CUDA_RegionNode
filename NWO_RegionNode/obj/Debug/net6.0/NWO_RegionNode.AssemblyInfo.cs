@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("NWO_RegionNode")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ddc13a8ca661858b8d3bca39894b72c60c23243a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+80d767e3d78476297529ead48dbb8dc8a2f9153a")]
 [assembly: System.Reflection.AssemblyProductAttribute("NWO_RegionNode")]
 [assembly: System.Reflection.AssemblyTitleAttribute("NWO_RegionNode")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

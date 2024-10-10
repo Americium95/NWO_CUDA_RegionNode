@@ -24,6 +24,7 @@ namespace NWO_RegionNode
 
 
         static public Dictionary<int, User> userTable = new Dictionary<int, User>();
+        static public Dictionary<Int32, MoveMent> moveMentTable = new Dictionary<Int32, MoveMent>();
 
         //근사동기화 주기 카운터
         static int NetWorkRoutine = 0;
@@ -83,16 +84,23 @@ namespace NWO_RegionNode
             //비동기서버 시작
             RunServerAsync();
 
-            //락스텝 동기화 루프
-            System.Timers.Timer LockStepTimer = new System.Timers.Timer(150);
-            LockStepTimer.Elapsed += LockStep;
-            LockStepTimer.AutoReset = true;
-            LockStepTimer.Enabled = true;
+            //유저락스텝 동기화 루프
+            System.Timers.Timer userLockStepTimer = new System.Timers.Timer(150);
+            userLockStepTimer.Elapsed += userLockStep;
+            userLockStepTimer.AutoReset = true;
+            userLockStepTimer.Enabled = true;
+
+            //오브젝트 락스텝 동기화 루프
+            System.Timers.Timer moveMentLockStepTimer = new System.Timers.Timer(500);
+            moveMentLockStepTimer.Elapsed += moveMentLockStep;
+            moveMentLockStepTimer.AutoReset = true;
+            moveMentLockStepTimer.Enabled = true;
+
             Console.ReadLine();
         }
 
-        //락스텝 처리
-        static void LockStep(Object source, ElapsedEventArgs e)
+        //플레이어 락스텝 처리
+        static void userLockStep(Object source, ElapsedEventArgs e)
         {
 
             //위치정보 동기화
@@ -163,7 +171,7 @@ namespace NWO_RegionNode
 
                     int i = 0;
 
-                    //데이터로부터 페킷 생성
+                    //유저 데이터로부터 페킷 생성
                     foreach (KeyValuePair<int,User> userData in userTable)
                     {
                         IntPtr currentPtr = IntPtr.Add(resultPtr, i * Marshal.SizeOf(typeof(float)));
@@ -203,7 +211,7 @@ namespace NWO_RegionNode
                         i++;
                     }
 
-                    //데이터 개수를 보냄
+                    //유저 데이터 개수를 보냄
                     packet.InsertRange(4, System.BitConverter.GetBytes((Int16)DataCount));
 
                     //송신
@@ -260,6 +268,142 @@ namespace NWO_RegionNode
                 }
             }
             NetWorkRoutine++;
+        }
+
+        //오브젝트 락스텝 처리
+        static void moveMentLockStep(Object source, ElapsedEventArgs e)
+        {
+            //이동처리
+            foreach (var NetMoveMentData in Program.moveMentTable)
+            {
+                NetMoveMentData.Value.position += new MoveMent.nwo_Vector3((int)(MathF.Sin((float)NetMoveMentData.Value.rot * 1.4f * MathF.PI / 180) * NetMoveMentData.Value.speed * -500 / 1000), 0, (int)(MathF.Cos((float)NetMoveMentData.Value.rot * 1.4f * MathF.PI / 180) * NetMoveMentData.Value.speed * -500 / 1000));
+
+                //NetMoveMentData.Value.tilePosition.X += (int)(NetMoveMentData.Value.position.X / 2560);
+                //NetMoveMentData.Value.tilePosition.Y += (int)(NetMoveMentData.Value.position.Z / 2560);
+
+                //NetMoveMentData.Value.position.X = (int)(NetMoveMentData.Value.position.X % 2560);
+                //NetMoveMentData.Value.position.Z = (int)(NetMoveMentData.Value.position.Z % 2560);
+            }
+
+
+            //위치정보 동기화
+
+            /*
+            *최소주기 기준인0.5s로 설정됨
+            */
+
+            //cuda로 데이터 적재
+
+            //vram등록
+            //cudaMemCopy(userTable.Select(o => new float4(o.Value.tilePosition.X, o.Value.tilePosition.Y, o.Value.position.X, o.Value.position.Z)).ToArray(), userTable.Count);
+            //결과버퍼
+            float[] c = new float[userTable.Count];
+
+            foreach (var broadcastUserData in Program.userTable)
+            {
+                int DataCount = 0;
+
+                //헤더 구성
+                List<byte> packet = new List<byte> { 0x04, 0x01 };
+
+                //수신 유저id 등록
+                packet.AddRange(System.BitConverter.GetBytes((Int16)broadcastUserData.Value.id));
+
+
+
+                //cpu 브로드케스트
+                foreach (var NetMoveMentData in Program.moveMentTable)
+                {
+                    //본인 제외
+                    //if(NetUserData.Key!=broadcastUserData.Key)
+                    //if (false)
+                    {
+                        //거리 비교
+                        //if (DistanceSquared(NetUserData.Value.tilePosition, NetUserData.Value.tilePosition) < 2 && DistanceSquared(NetUserData.Value.position) < 200)
+
+                        //유저넘버 구성
+                        packet.AddRange(System.BitConverter.GetBytes((Int32)NetMoveMentData.Key));
+                        Console.WriteLine((Int32)NetMoveMentData.Value.position.X);
+
+
+                        //Console.WriteLine(NetUserData.Value.tilePosition + "," + NetUserData.Value.position);
+
+                        //위치데이터 구성
+                        packet.AddRange(System.BitConverter.GetBytes((Int32)NetMoveMentData.Value.position.X));
+                        packet.AddRange(System.BitConverter.GetBytes((Int16)NetMoveMentData.Value.position.Y));
+                        packet.AddRange(System.BitConverter.GetBytes((Int32)NetMoveMentData.Value.position.Z));
+
+                        //속도데이터 구성
+                        packet.AddRange(System.BitConverter.GetBytes((Int16)NetMoveMentData.Value.speed));
+
+                        //각도 구성
+                        packet.Add(NetMoveMentData.Value.rot);
+
+
+                        DataCount++;
+                    }
+                }
+
+                //cuda브로드케스트
+                //cuda 연산,결과
+                //IntPtr resultPtr = exportCppFunctionAdd(c, new float4(broadcastUserData.Value.tilePosition.X, broadcastUserData.Value.tilePosition.Y, broadcastUserData.Value.position.X, broadcastUserData.Value.position.Z), userTable.Count);
+
+
+                int i = 0;
+
+                //유저 데이터로부터 페킷 생성
+                foreach (KeyValuePair<int, User> userData in userTable)
+                {
+                    break;
+                    //IntPtr currentPtr = IntPtr.Add(resultPtr, i * Marshal.SizeOf(typeof(float)));
+                    //c[i] = Marshal.PtrToStructure<float>(currentPtr);
+
+                    //거리필터
+                    //if (c[i] < 2000)
+                    {
+                        //유저넘버 구성
+                        packet.AddRange(System.BitConverter.GetBytes((Int16)userData.Key));
+
+                        packet.AddRange(System.BitConverter.GetBytes((UInt16)userData.Value.scaffoldingIndex));
+
+                        //타일 위치데이터 구성
+                        packet.AddRange(System.BitConverter.GetBytes((Int16)userData.Value.tilePosition.X));
+                        packet.AddRange(System.BitConverter.GetBytes((Int16)userData.Value.tilePosition.Y));
+
+                        //Console.WriteLine(NetUserData.Value.tilePosition + "," + NetUserData.Value.position);
+
+                        //위치데이터 구성
+                        packet.AddRange(System.BitConverter.GetBytes((Int16)userData.Value.position.X));
+                        packet.AddRange(System.BitConverter.GetBytes((Int16)userData.Value.position.Y));
+                        packet.AddRange(System.BitConverter.GetBytes((Int16)userData.Value.position.Z));
+
+                        //속도데이터 구성
+                        packet.AddRange(System.BitConverter.GetBytes((Int16)userData.Value.speed));
+
+                        //각도 구성
+                        packet.Add(userData.Value.rot);
+
+                        //수신시간 추가
+                        packet.AddRange(System.BitConverter.GetBytes((UInt16)userData.Value.receiveTime));
+
+                        DataCount++;
+                    }
+
+                    i++;
+                }
+
+                //오브젝트 데이터 개수를 보냄
+                packet.InsertRange(4, System.BitConverter.GetBytes((Int16)DataCount));
+
+                if (DataCount > 0)
+                {
+                    //송신
+                    broadcastUserData.Value.IChannel.WriteAsync(Unpooled.CopiedBuffer(packet.ToArray()));
+                }
+            }
+
+            //vram 해제
+            //cudaMemFree();
         }
 
         static async Task RunServerAsync()
