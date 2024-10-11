@@ -5,7 +5,6 @@ using DotNetty.Transport.Channels.Sockets;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Timers;
-using static NWO_RegionNode.Program;
 
 namespace NWO_RegionNode
 {
@@ -91,7 +90,7 @@ namespace NWO_RegionNode
             userLockStepTimer.Enabled = true;
 
             //오브젝트 락스텝 동기화 루프
-            System.Timers.Timer moveMentLockStepTimer = new System.Timers.Timer(500);
+            System.Timers.Timer moveMentLockStepTimer = new System.Timers.Timer(400);
             moveMentLockStepTimer.Elapsed += moveMentLockStep;
             moveMentLockStepTimer.AutoReset = true;
             moveMentLockStepTimer.Enabled = true;
@@ -273,10 +272,11 @@ namespace NWO_RegionNode
         //오브젝트 락스텝 처리
         static void moveMentLockStep(Object source, ElapsedEventArgs e)
         {
-            //이동처리
+            //이동,회전 처리
             foreach (var NetMoveMentData in Program.moveMentTable)
             {
-                NetMoveMentData.Value.position += new MoveMent.nwo_Vector3((int)(MathF.Sin((float)NetMoveMentData.Value.rot * 1.4f * MathF.PI / 180) * NetMoveMentData.Value.speed * -500 / 1000), 0, (int)(MathF.Cos((float)NetMoveMentData.Value.rot * 1.4f * MathF.PI / 180) * NetMoveMentData.Value.speed * -500 / 1000));
+                NetMoveMentData.Value.Angle = (byte)((MathR.MoveTowardsAngle(NetMoveMentData.Value.Angle, NetMoveMentData.Value.targetAngle, 2)+256)%256);
+                NetMoveMentData.Value.position += new MoveMent.nwo_Vector3((int)(MathF.Sin((float)NetMoveMentData.Value.Angle * 1.4f * MathF.PI / 180) * NetMoveMentData.Value.speed * -500 / 1000), 0, (int)(MathF.Cos((float)NetMoveMentData.Value.Angle * 1.4f * MathF.PI / 180) * NetMoveMentData.Value.speed * -500 / 1000));
 
                 //NetMoveMentData.Value.tilePosition.X += (int)(NetMoveMentData.Value.position.X / 2560);
                 //NetMoveMentData.Value.tilePosition.Y += (int)(NetMoveMentData.Value.position.Z / 2560);
@@ -337,7 +337,7 @@ namespace NWO_RegionNode
                         packet.AddRange(System.BitConverter.GetBytes((Int16)NetMoveMentData.Value.speed));
 
                         //각도 구성
-                        packet.Add(NetMoveMentData.Value.rot);
+                        packet.Add(NetMoveMentData.Value.Angle);
 
 
                         DataCount++;
@@ -402,8 +402,6 @@ namespace NWO_RegionNode
                 }
             }
 
-            //vram 해제
-            //cudaMemFree();
         }
 
         static async Task RunServerAsync()

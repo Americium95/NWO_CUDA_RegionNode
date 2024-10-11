@@ -1,20 +1,20 @@
 ﻿using DotNetty.Transport.Channels;
-using System.Numerics;
 
 public class MoveMent
 {
     public Int32 id = 0;
     public nwo_Vector3 position = new nwo_Vector3(0,0,0);
     public int speed = 0;
-    public byte rot = 0;
+    public byte targetAngle = 0;
+    public byte Angle = 0;
     public UInt16 receiveTime = 0;
 
-    public MoveMent(IChannelHandlerContext context, Int32 id, nwo_Vector3 position, int spd, byte rot)
+    public MoveMent(IChannelHandlerContext context, Int32 id, nwo_Vector3 position, int spd, byte Angle)
     {
         this.id = id;
         this.position = position;
         this.speed = spd;
-        this.rot = rot;
+        this.targetAngle = Angle;
     }
 
     public class nwo_Vector3

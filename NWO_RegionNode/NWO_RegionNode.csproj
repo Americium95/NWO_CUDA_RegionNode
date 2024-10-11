@@ -25,4 +25,10 @@
     <PackageReference Include="DotNetty.Transport" Version="0.7.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="CudaRuntime1.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

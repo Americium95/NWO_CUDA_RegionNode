@@ -54,3 +54,4 @@ C:\Users\sunk0\Documents\GitHub\NWO_RegionNode\NWO_RegionNode\obj\Debug\net6.0\r
 C:\Users\sunk0\Documents\GitHub\NWO_RegionNode\NWO_RegionNode\obj\Debug\net6.0\NWO_RegionNode.pdb
 C:\Users\sunk0\Documents\GitHub\NWO_RegionNode\NWO_RegionNode\obj\Debug\net6.0\NWO_RegionNode.genruntimeconfig.cache
 C:\Users\sunk0\Documents\GitHub\NWO_RegionNode\NWO_RegionNode\obj\Debug\net6.0\ref\NWO_RegionNode.dll
+C:\Users\sunk0\Documents\GitHub\NWO_RegionNode\NWO_RegionNode\bin\Debug\net6.0\CudaRuntime1.dll

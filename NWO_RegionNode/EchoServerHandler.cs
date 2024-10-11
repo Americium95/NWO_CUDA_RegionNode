@@ -1,7 +1,6 @@
 ﻿using DotNetty.Buffers;
 using DotNetty.Transport.Channels;
 using NWO_RegionNode;
-using System.Diagnostics;
 using System.Numerics;
 using System.Text;
 
@@ -120,10 +119,10 @@ public class EchoServerHandler : ChannelHandlerAdapter
             //속도데이터 구성
             int speed = BitConverter.ToInt16(new byte[] { buffer.GetByte(16), buffer.GetByte(17) });
 
-
             //각정보
-            byte rot = buffer.GetByte(18);
-
+            byte Angle = buffer.GetByte(18);
+              
+            //지연시간 계산
             UInt16 dataTime = BitConverter.ToUInt16(new byte[] { buffer.GetByte(19), buffer.GetByte(20) });
 
             UInt16 delyTime = (ushort)(((UInt16)(DateTime.Now.Second * 1000 + DateTime.Now.Millisecond) - dataTime + 60000) % 60000);
@@ -133,19 +132,20 @@ public class EchoServerHandler : ChannelHandlerAdapter
             //데이터 반영
             if (!Program.moveMentTable.TryGetValue(moveMentIndex, out Data))
             {
-                Program.moveMentTable.Add(moveMentIndex, new MoveMent(context, moveMentIndex, UserPosition, speed, rot));
+                Program.moveMentTable.Add(moveMentIndex, new MoveMent(context, moveMentIndex, UserPosition, speed, Angle));
 
                 Data = Program.moveMentTable[moveMentIndex];
                 Data.position = UserPosition;
                 Data.speed = speed;
-                Data.rot = rot;
+                Data.Angle = Angle;
                 Data.receiveTime = (UInt16)(DateTime.Now.Second * 1000 + DateTime.Now.Millisecond);
             }
             else
             {
                 Data.position = UserPosition;
                 Data.speed = speed;
-                Data.rot = rot;
+                Data.targetAngle = Angle;
+                Data.Angle = (byte)MathR.MoveTowardsAngle(Data.Angle, Angle, (int)(2 * MathF.Floor(delyTime / 500)));
                 Data.receiveTime = (UInt16)(DateTime.Now.Second * 1000 + DateTime.Now.Millisecond);
             }
         }
@@ -164,7 +164,7 @@ public class EchoServerHandler : ChannelHandlerAdapter
 
 
             //각정보
-            byte rot = buffer.GetByte(8);
+            byte Angle = buffer.GetByte(8);
 
             UInt16 dataTime = BitConverter.ToUInt16(new byte[] { buffer.GetByte(9), buffer.GetByte(10) });
 
@@ -175,7 +175,7 @@ public class EchoServerHandler : ChannelHandlerAdapter
             {
                 Data.position = Data.position;
                 Data.speed = speed;
-                Data.rot = rot;
+                Data.targetAngle = Angle;
                 Data.receiveTime = (UInt16)(DateTime.Now.Second * 1000 + DateTime.Now.Millisecond);
             }
         }
