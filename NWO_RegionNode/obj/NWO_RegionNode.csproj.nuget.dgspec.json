@@ -56,6 +56,10 @@
             "DotNetty.Transport": {
               "target": "Package",
               "version": "[0.7.2, )"
+            },
+            "System.Drawing.Common": {
+              "target": "Package",
+              "version": "[8.0.10, )"
             }
           },
           "imports": [

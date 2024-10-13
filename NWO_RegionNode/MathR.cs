@@ -14,11 +14,11 @@
             // 차이를 -180 ~ 180 사이로 변환
             if (delta > 128)
             {
-                delta -= 128;
+                delta -= 256;
             }
             else if (delta < -128)
             {
-                delta += 128;
+                delta += 256;
             }
 
             // 차이의 절대값이 maxDelta보다 작거나 같으면 target으로 이동

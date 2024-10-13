@@ -55,3 +55,6 @@ C:\Users\sunk0\Documents\GitHub\NWO_RegionNode\NWO_RegionNode\obj\Debug\net6.0\N
 C:\Users\sunk0\Documents\GitHub\NWO_RegionNode\NWO_RegionNode\obj\Debug\net6.0\NWO_RegionNode.genruntimeconfig.cache
 C:\Users\sunk0\Documents\GitHub\NWO_RegionNode\NWO_RegionNode\obj\Debug\net6.0\ref\NWO_RegionNode.dll
 C:\Users\sunk0\Documents\GitHub\NWO_RegionNode\NWO_RegionNode\bin\Debug\net6.0\CudaRuntime1.dll
+C:\Users\sunk0\Documents\GitHub\NWO_RegionNode\NWO_RegionNode\bin\Debug\net6.0\Microsoft.Win32.SystemEvents.dll
+C:\Users\sunk0\Documents\GitHub\NWO_RegionNode\NWO_RegionNode\bin\Debug\net6.0\System.Drawing.Common.dll
+C:\Users\sunk0\Documents\GitHub\NWO_RegionNode\NWO_RegionNode\bin\Debug\net6.0\runtimes\win\lib\net6.0\Microsoft.Win32.SystemEvents.dll

@@ -2,6 +2,7 @@
 using DotNetty.Transport.Bootstrapping;
 using DotNetty.Transport.Channels;
 using DotNetty.Transport.Channels.Sockets;
+using System.Drawing;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Timers;
@@ -27,6 +28,7 @@ namespace NWO_RegionNode
 
         //근사동기화 주기 카운터
         static int NetWorkRoutine = 0;
+
 
         static void Main(string[] args)
         {
@@ -94,6 +96,8 @@ namespace NWO_RegionNode
             moveMentLockStepTimer.Elapsed += moveMentLockStep;
             moveMentLockStepTimer.AutoReset = true;
             moveMentLockStepTimer.Enabled = true;
+
+            terrainCollision(1414909, 1008634);
 
             Console.ReadLine();
         }
@@ -276,8 +280,20 @@ namespace NWO_RegionNode
             foreach (var NetMoveMentData in Program.moveMentTable)
             {
                 NetMoveMentData.Value.Angle = (byte)((MathR.MoveTowardsAngle(NetMoveMentData.Value.Angle, NetMoveMentData.Value.targetAngle, 2)+256)%256);
-                NetMoveMentData.Value.position += new MoveMent.nwo_Vector3((int)(MathF.Sin((float)NetMoveMentData.Value.Angle * 1.4f * MathF.PI / 180) * NetMoveMentData.Value.speed * -500 / 1000), 0, (int)(MathF.Cos((float)NetMoveMentData.Value.Angle * 1.4f * MathF.PI / 180) * NetMoveMentData.Value.speed * -500 / 1000));
 
+                MoveMent.nwo_Vector3 v = NetMoveMentData.Value.position + new MoveMent.nwo_Vector3((int)(MathF.Sin((float)NetMoveMentData.Value.Angle * 1.4f * MathF.PI / 180) * (NetMoveMentData.Value.speed + 40) * -500 / 1000), 0, (int)(MathF.Cos((float)NetMoveMentData.Value.Angle * 1.4f * MathF.PI / 180) * (NetMoveMentData.Value.speed + 40) * -500 / 1000));
+
+                float h = terrainCollision(v.X, -v.Z);
+
+                if (h < 2)
+                {
+                    Console.WriteLine(h);
+                    NetMoveMentData.Value.position = NetMoveMentData.Value.position + new MoveMent.nwo_Vector3((int)(MathF.Sin((float)NetMoveMentData.Value.Angle * 1.4f * MathF.PI / 180) * NetMoveMentData.Value.speed * -500 / 1000), 0, (int)(MathF.Cos((float)NetMoveMentData.Value.Angle * 1.4f * MathF.PI / 180) * NetMoveMentData.Value.speed * -500 / 1000)); ;
+                }
+                else
+                {
+                    NetMoveMentData.Value.speed = 0;
+                }
                 //NetMoveMentData.Value.tilePosition.X += (int)(NetMoveMentData.Value.position.X / 2560);
                 //NetMoveMentData.Value.tilePosition.Y += (int)(NetMoveMentData.Value.position.Z / 2560);
 
@@ -323,7 +339,6 @@ namespace NWO_RegionNode
 
                         //유저넘버 구성
                         packet.AddRange(System.BitConverter.GetBytes((Int32)NetMoveMentData.Key));
-                        Console.WriteLine((Int32)NetMoveMentData.Value.position.X);
 
 
                         //Console.WriteLine(NetUserData.Value.tilePosition + "," + NetUserData.Value.position);
@@ -402,6 +417,28 @@ namespace NWO_RegionNode
                 }
             }
 
+        }
+
+        static float terrainCollision(int x,int y)
+        {
+            x -= 256 * 5 + 90;
+            y -= 256 * 5 + 90;
+            string dir = @"E:\NWO\\NWOMAP2\" + (x / 2560 + 3) + "," + (y / 2560 + 3) + ".png";
+            if (File.Exists(dir))
+            {
+                Bitmap bitmap = new Bitmap(dir);
+
+                //Console.WriteLine(bitmap.GetPixel((x%2560)/50, (y % 2560) / 50));
+
+                Color Rgb = bitmap.GetPixel((x % 2560)/5, (y % 2560)/5);
+
+                float height = (-10000 + (((Rgb.R << 16) | (Rgb.G << 8) | Rgb.B) * 0.1f)) * (0.15f) * 1.25f;
+
+                bitmap.Dispose();
+
+                return height;
+            }
+            return 0;
         }
 
         static async Task RunServerAsync()
