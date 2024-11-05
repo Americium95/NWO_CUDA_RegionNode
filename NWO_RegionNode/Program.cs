@@ -86,13 +86,13 @@ namespace NWO_RegionNode
             RunServerAsync();
 
             //유저락스텝 동기화 루프
-            System.Timers.Timer userLockStepTimer = new System.Timers.Timer(150);
+            System.Timers.Timer userLockStepTimer = new System.Timers.Timer(200);
             userLockStepTimer.Elapsed += userLockStep;
             userLockStepTimer.AutoReset = true;
             userLockStepTimer.Enabled = true;
 
             //오브젝트 락스텝 동기화 루프
-            System.Timers.Timer moveMentLockStepTimer = new System.Timers.Timer(400);
+            System.Timers.Timer moveMentLockStepTimer = new System.Timers.Timer(500);
             moveMentLockStepTimer.Elapsed += moveMentLockStep;
             moveMentLockStepTimer.AutoReset = true;
             moveMentLockStepTimer.Enabled = true;
@@ -218,7 +218,7 @@ namespace NWO_RegionNode
                     packet.InsertRange(4, System.BitConverter.GetBytes((Int16)DataCount));
 
                     //송신
-                    broadcastUserData.Value.IChannel.WriteAsync(Unpooled.CopiedBuffer(packet.ToArray()));
+                    broadcastUserData.Value.IChannel.WriteAndFlushAsync(Unpooled.CopiedBuffer(packet.ToArray()));
                 }
                 //정밀동기화 주기 카운터 초기화
                 NetWorkRoutine = 0;
@@ -267,10 +267,11 @@ namespace NWO_RegionNode
                     packet.InsertRange(4, System.BitConverter.GetBytes((Int16)DataCount));
 
                     //송신
-                    broadcastUserData.Value.IChannel.WriteAsync(Unpooled.CopiedBuffer(packet.ToArray()));
+                    broadcastUserData.Value.IChannel.WriteAndFlushAsync(Unpooled.CopiedBuffer(packet.ToArray()));
                 }
             }
             NetWorkRoutine++;
+
         }
 
         //오브젝트 락스텝 처리
@@ -281,14 +282,15 @@ namespace NWO_RegionNode
             {
                 NetMoveMentData.Value.Angle = (byte)((MathR.MoveTowardsAngle(NetMoveMentData.Value.Angle, NetMoveMentData.Value.targetAngle, 2)+256)%256);
 
-                MoveMent.nwo_Vector3 v = NetMoveMentData.Value.position + new MoveMent.nwo_Vector3((int)(MathF.Sin((float)NetMoveMentData.Value.Angle * 1.4f * MathF.PI / 180) * (NetMoveMentData.Value.speed + 40) * -500 / 1000), 0, (int)(MathF.Cos((float)NetMoveMentData.Value.Angle * 1.4f * MathF.PI / 180) * (NetMoveMentData.Value.speed + 40) * -500 / 1000));
+                MoveMent.nwo_Vector3 v = NetMoveMentData.Value.position + new MoveMent.nwo_Vector3((int)(MathF.Sin((float)NetMoveMentData.Value.Angle * 1.4f * MathF.PI / 180) * (NetMoveMentData.Value.speed + 40) * -400 / 1000), 0, (int)(MathF.Cos((float)NetMoveMentData.Value.Angle * 1.4f * MathF.PI / 180) * (NetMoveMentData.Value.speed + 40) * -400 / 1000));
 
+                //충돌검사
                 float h = terrainCollision(v.X, -v.Z);
 
+                Console.WriteLine(h);
                 if (h < 2)
                 {
-                    Console.WriteLine(h);
-                    NetMoveMentData.Value.position = NetMoveMentData.Value.position + new MoveMent.nwo_Vector3((int)(MathF.Sin((float)NetMoveMentData.Value.Angle * 1.4f * MathF.PI / 180) * NetMoveMentData.Value.speed * -500 / 1000), 0, (int)(MathF.Cos((float)NetMoveMentData.Value.Angle * 1.4f * MathF.PI / 180) * NetMoveMentData.Value.speed * -500 / 1000)); ;
+                    NetMoveMentData.Value.position = NetMoveMentData.Value.position + new MoveMent.nwo_Vector3((int)(MathF.Sin((float)NetMoveMentData.Value.Angle * 1.4f * MathF.PI / 180) * NetMoveMentData.Value.speed * -400 / 1000), 0, (int)(MathF.Cos((float)NetMoveMentData.Value.Angle * 1.4f * MathF.PI / 180) * NetMoveMentData.Value.speed * -400 / 1000)); ;
                 }
                 else
                 {
@@ -413,7 +415,7 @@ namespace NWO_RegionNode
                 if (DataCount > 0)
                 {
                     //송신
-                    broadcastUserData.Value.IChannel.WriteAsync(Unpooled.CopiedBuffer(packet.ToArray()));
+                    broadcastUserData.Value.IChannel.WriteAndFlushAsync(Unpooled.CopiedBuffer(packet.ToArray()));
                 }
             }
 
@@ -430,7 +432,7 @@ namespace NWO_RegionNode
 
                 //Console.WriteLine(bitmap.GetPixel((x%2560)/50, (y % 2560) / 50));
 
-                Color Rgb = bitmap.GetPixel((x % 2560)/5, (y % 2560)/5);
+                Color Rgb = bitmap.GetPixel((x % 2560) / 5, (y % 2560) / 5);
 
                 float height = (-10000 + (((Rgb.R << 16) | (Rgb.G << 8) | Rgb.B) * 0.1f)) * (0.15f) * 1.25f;
 
