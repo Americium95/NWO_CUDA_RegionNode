@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "JjUDtJmyvdA=",
+  "dgSpecHash": "+7N9Lj/y9DHtuZX+HFkeqKU256sBJcV6uV20gLaUBFzVToqizk8NLE3Q45Corwz2nss9OOKvleB4o3SN7moskw==",
   "success": true,
   "projectFilePath": "C:\\Users\\sunk0\\Documents\\GitHub\\NWO_RegionNode\\NWO_RegionNode\\NWO_RegionNode.csproj",
   "expectedPackageFiles": [
@@ -14,9 +14,7 @@
     "C:\\Users\\sunk0\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\5.0.0\\microsoft.extensions.logging.abstractions.5.0.0.nupkg.sha512",
     "C:\\Users\\sunk0\\.nuget\\packages\\microsoft.extensions.options\\5.0.0\\microsoft.extensions.options.5.0.0.nupkg.sha512",
     "C:\\Users\\sunk0\\.nuget\\packages\\microsoft.extensions.primitives\\5.0.0\\microsoft.extensions.primitives.5.0.0.nupkg.sha512",
-    "C:\\Users\\sunk0\\.nuget\\packages\\microsoft.win32.systemevents\\8.0.0\\microsoft.win32.systemevents.8.0.0.nupkg.sha512",
     "C:\\Users\\sunk0\\.nuget\\packages\\system.collections.immutable\\1.5.0\\system.collections.immutable.1.5.0.nupkg.sha512",
-    "C:\\Users\\sunk0\\.nuget\\packages\\system.drawing.common\\8.0.10\\system.drawing.common.8.0.10.nupkg.sha512",
     "C:\\Users\\sunk0\\.nuget\\packages\\system.runtime.compilerservices.unsafe\\5.0.0\\system.runtime.compilerservices.unsafe.5.0.0.nupkg.sha512"
   ],
   "logs": []
