@@ -1,20 +1,24 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\sunk0\\Documents\\GitHub\\NWO_RegionNode\\NWO_RegionNode\\NWO_RegionNode.csproj": {}
+    "C:\\GitHub\\NWO_CUDA_RegionNode\\NWO_RegionNode\\NWO_RegionNode.csproj": {}
   },
   "projects": {
-    "C:\\Users\\sunk0\\Documents\\GitHub\\NWO_RegionNode\\NWO_RegionNode\\NWO_RegionNode.csproj": {
+    "C:\\GitHub\\NWO_CUDA_RegionNode\\NWO_RegionNode\\NWO_RegionNode.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\sunk0\\Documents\\GitHub\\NWO_RegionNode\\NWO_RegionNode\\NWO_RegionNode.csproj",
+        "projectUniqueName": "C:\\GitHub\\NWO_CUDA_RegionNode\\NWO_RegionNode\\NWO_RegionNode.csproj",
         "projectName": "NWO_RegionNode",
-        "projectPath": "C:\\Users\\sunk0\\Documents\\GitHub\\NWO_RegionNode\\NWO_RegionNode\\NWO_RegionNode.csproj",
-        "packagesPath": "C:\\Users\\sunk0\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\sunk0\\Documents\\GitHub\\NWO_RegionNode\\NWO_RegionNode\\obj\\",
+        "projectPath": "C:\\GitHub\\NWO_CUDA_RegionNode\\NWO_RegionNode\\NWO_RegionNode.csproj",
+        "packagesPath": "C:\\Users\\Americium\\.nuget\\packages\\",
+        "outputPath": "C:\\GitHub\\NWO_CUDA_RegionNode\\NWO_RegionNode\\obj\\",
         "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
         "configFilePaths": [
-          "C:\\Users\\sunk0\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Americium\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -34,7 +38,13 @@
           "warnAsError": [
             "NU1605"
           ]
-        }
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.200"
       },
       "frameworks": {
         "net6.0": {
@@ -51,6 +61,10 @@
             "DotNetty.Transport": {
               "target": "Package",
               "version": "[0.7.2, )"
+            },
+            "System.Drawing.Common": {
+              "target": "Package",
+              "version": "[8.0.10, )"
             }
           },
           "imports": [
@@ -59,16 +73,35 @@
             "net47",
             "net471",
             "net472",
-            "net48"
+            "net48",
+            "net481"
           ],
           "assetTargetFallback": true,
           "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[6.0.36, 6.0.36]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Host.win-x64",
+              "version": "[6.0.36, 6.0.36]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[6.0.36, 6.0.36]"
+            },
+            {
+              "name": "Microsoft.WindowsDesktop.App.Ref",
+              "version": "[6.0.36, 6.0.36]"
+            }
+          ],
           "frameworkReferences": {
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.301\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.203\\RuntimeIdentifierGraph.json"
         }
       }
     }
