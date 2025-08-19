@@ -1,4 +1,10 @@
-# NWO_RegionNode
-게임서버 노드
+# Realtime Sync Server
 
-디버깅을 위한 리전 로드밸런서 없이 다이랙트연결 지원
+
+---
+
+## 🚀 요구사항
+
+- CUDA 13.0
+
+---
