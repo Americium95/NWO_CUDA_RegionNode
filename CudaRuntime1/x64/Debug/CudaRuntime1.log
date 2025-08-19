@@ -1,2 +1,4 @@
-﻿C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Msbuild\Microsoft\VC\v160\Microsoft.CppBuild.targets(499,5): warning MSB8004: Output 디렉터리가 슬래시로 끝나지 않습니다. Output 디렉터리의 적절한 평가를 허용하는 데 필요하므로 이 빌드 인스턴스에서 슬래시를 추가합니다.
-  CudaRuntime1.vcxproj -> C:\Users\sunk0\Documents\GitHub\NWO_RegionNode\NWO_RegionNode\CudaRuntime1.dll
+﻿C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(520,5): warning MSB8004: Output 디렉터리가 슬래시로 끝나지 않습니다. Output 디렉터리의 적절한 평가를 허용하는 데 필요하므로 이 빌드 인스턴스에서 슬래시를 추가합니다.
+     C:\GitHub\NWO_CUDA_RegionNode\NWO_RegionNode\bin\Debug\net6.0\CudaRuntime1.lib 라이브러리 및 C:\GitHub\NWO_CUDA_RegionNode\NWO_RegionNode\bin\Debug\net6.0\CudaRuntime1.exp 개체를 생성하고 있습니다.
+LINK : warning LNK4098: 'LIBCMT' defaultlib가 다른 라이브러리와 충돌합니다. /NODEFAULTLIB:library를 사용하십시오.
+  CudaRuntime1.vcxproj -> C:\GitHub\NWO_CUDA_RegionNode\NWO_RegionNode\bin\Debug\net6.0\CudaRuntime1.dll

@@ -31,6 +31,56 @@ namespace NWO_RegionNode
 
         static void Main(string[] args)
         {
+            const int arraySize = 5;
+
+            float4[] a = new float4[arraySize]
+            {
+                new float4(1, 3, 3, 0),
+                new float4(1, 2, 6, 0),
+                new float4(1, 2, 9, 0),
+                new float4(1, 2, 12, 0),
+                new float4(1, 2, 15, 0)
+            };
+
+            float4[] b = new float4[arraySize]
+            {
+            new float4(15, 14, 5, 0),
+            new float4(1, 2, 5, 0),
+            new float4(9, 8, 7, 0),
+            new float4(6, 5, 4, 0),
+            new float4(3, 2, 1, 0)
+            };
+
+            float[] c = new float[arraySize];
+
+
+            //vram등록
+            cudaMemCopy(a, arraySize);
+            //연산,결과
+            IntPtr resultPtr = exportCppFunctionAdd(c, b[1], arraySize);
+            //resultPtr = exportCppFunctionAdd(c, b[1], arraySize);
+
+            for (int i = 0; i < arraySize; i++)
+            {
+                IntPtr currentPtr = IntPtr.Add(resultPtr, i * Marshal.SizeOf(typeof(float)));
+                c[i] = Marshal.PtrToStructure<float>(currentPtr);
+            }
+            //메모리 해제
+            cudaMemFree();
+
+            //Console.WriteLine(cudaStatus);
+            /*if (cudaStatus != cudaError_t.Success)
+            {
+                Console.WriteLine("addWithCuda failed!");
+                return;
+            }*/
+            // 결과 출력
+            for (int i = 0; i < arraySize; ++i)
+            {
+                Console.WriteLine($"{i}: {{ {a[i].x}, {a[i].y}, {a[i].z} }} , {{ {b[1].x}, {b[1].y}, {b[1].z} }} = {{ {c[i]} }}");
+            }
+
+
             //비동기서버 시작
             RunServerAsync();
 

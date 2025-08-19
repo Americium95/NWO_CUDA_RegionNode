@@ -3,7 +3,9 @@
 
 #include <stdio.h> 
 
+//메모리 쓰기
 cudaError_t menCopyWithCuda(const float4* a, unsigned int arraySize);
+//거리연산
 cudaError_t disFilterWithCuda(float *c, const float4 start, unsigned int size);
 int memFreeWithCuda();
 
@@ -19,6 +21,8 @@ __global__ void disFilterKernel(float *c,float4 start, const float4 *a)
         c[i] = 100000;
 }
 
+
+//CUDA디버깅용
 int main()
 {
     const int arraySize = 5;
@@ -97,13 +101,7 @@ extern "C" __declspec(dllexport) int cudaMemFree(float4* a, int arraySize)
 
 cudaError_t menCopyWithCuda(const float4* a, unsigned int arraySize)
 {
-    // Choose which GPU to run on, change this on a multi-GPU system.
-    cudaStatus = cudaSetDevice(0);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?");
-        cudaFree(dev_a);
-        return cudaStatus;
-    }
+    cudaError_t cudaStatus;
 
     cudaStatus = cudaMalloc((void**)&dev_a, arraySize * sizeof(float4));
     if (cudaStatus != cudaSuccess) {
