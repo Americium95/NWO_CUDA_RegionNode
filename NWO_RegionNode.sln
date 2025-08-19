@@ -5,7 +5,7 @@ VisualStudioVersion = 17.11.35312.102
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NWO_RegionNode", "NWO_RegionNode\NWO_RegionNode.csproj", "{06EEF3F2-5CA0-4142-92C8-7C689A00B7C0}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CudaRuntime1", "..\..\..\source\repos\CudaRuntime1\CudaRuntime1\CudaRuntime1.vcxproj", "{9670DE46-8FAF-440D-A799-9CF78E58CCA3}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CudaRuntime1", "CudaRuntime1\CudaRuntime1.vcxproj", "{9670DE46-8FAF-440D-A799-9CF78E58CCA3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

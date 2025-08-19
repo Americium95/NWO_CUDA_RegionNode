@@ -1,0 +1,78 @@
+﻿  Compiling CUDA source file kernel.cu...
+  
+  C:\Users\sunk0\source\repos\CudaRuntime1\CudaRuntime1>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\bin\nvcc.exe" -gencode=arch=compute_52,code=\"sm_52,compute_52\" --use-local-env -ccbin "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\bin\HostX86\x64" -x cu   -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include"     --keep-dir x64\Release  -maxrregcount=0   --machine 64 --compile -cudart static    -DWIN32 -DWIN64 -DNDEBUG -D_CONSOLE -D_MBCS -Xcompiler "/EHsc /W3 /nologo /O2 /FS   /MD " -Xcompiler "/Fdx64\Release\vc142.pdb" -o C:\Users\sunk0\source\repos\CudaRuntime1\CudaRuntime1\x64\Release\kernel.cu.obj "C:\Users\sunk0\source\repos\CudaRuntime1\CudaRuntime1\kernel.cu" 
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(12392): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+  kernel.cu
+  tmpxft_00006c58_00000000-7_kernel.cudafe1.cpp
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\driver_types.h(1334): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+     C:\Users\sunk0\Documents\GitHub\NWO_RegionNode\x64\Release\CudaRuntime1.lib 라이브러리 및 C:\Users\sunk0\Documents\GitHub\NWO_RegionNode\x64\Release\CudaRuntime1.exp 개체를 생성하고 있습니다.
+LINK : warning LNK4098: 'LIBCMT' defaultlib가 다른 라이브러리와 충돌합니다. /NODEFAULTLIB:library를 사용하십시오.
+  LINK : /LTCG를 지정했지만 코드를 생성할 필요가 없습니다. 명령줄에서 /LTCG를 제거하면 링커 성능이 향상됩니다.
+  CudaRuntime1.vcxproj -> C:\Users\sunk0\Documents\GitHub\NWO_RegionNode\x64\Release\CudaRuntime1.exe
