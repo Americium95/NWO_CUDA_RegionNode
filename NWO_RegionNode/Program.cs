@@ -85,7 +85,7 @@ namespace NWO_RegionNode
             RunServerAsync();
 
             //유저락스텝 동기화 루프
-            System.Timers.Timer userLockStepTimer = new System.Timers.Timer(200);
+            System.Timers.Timer userLockStepTimer = new System.Timers.Timer(150);
             userLockStepTimer.Elapsed += userLockStep;
             userLockStepTimer.AutoReset = true;
             userLockStepTimer.Enabled = true;
@@ -182,7 +182,7 @@ namespace NWO_RegionNode
                                 //유저넘버 구성
                                 packet.AddRange(System.BitConverter.GetBytes((Int16)userData.Key));
 
-                                packet.AddRange(System.BitConverter.GetBytes((UInt16)userData.Value.scaffoldingIndex));
+                                packet.AddRange(System.BitConverter.GetBytes((UInt32)userData.Value.scaffoldingIndex));
 
                                 //타일 위치데이터 구성
                                 packet.AddRange(System.BitConverter.GetBytes((Int16)userData.Value.tilePosition.X));

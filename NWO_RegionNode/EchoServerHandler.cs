@@ -21,27 +21,27 @@ public class EchoServerHandler : ChannelHandlerAdapter
             int userIndex = BitConverter.ToInt16(new byte[] { buffer.GetByte(2), buffer.GetByte(3) }, 0);
 
             //발판 인덱스
-            UInt16 scaffoldingIndex = BitConverter.ToUInt16(new byte[] { buffer.GetByte(4), buffer.GetByte(5) }, 0);
+            UInt32 scaffoldingIndex = BitConverter.ToUInt32(new byte[] { buffer.GetByte(4), buffer.GetByte(5), buffer.GetByte(6), buffer.GetByte(7) }, 0);
 
             //타일 위치데이터 구성
             Vector2 tilePosition = new Vector2(
-                BitConverter.ToInt16(new byte[] { buffer.GetByte(6), buffer.GetByte(7) }),
-                BitConverter.ToInt16(new byte[] { buffer.GetByte(8), buffer.GetByte(9) }));
+                BitConverter.ToInt16(new byte[] { buffer.GetByte(8), buffer.GetByte(9) }),
+                BitConverter.ToInt16(new byte[] { buffer.GetByte(10), buffer.GetByte(11) }));
 
             //위치데이터 구성
             Vector3 UserPosition = new Vector3(
-                BitConverter.ToInt16(new byte[] { buffer.GetByte(10), buffer.GetByte(11) }),
                 BitConverter.ToInt16(new byte[] { buffer.GetByte(12), buffer.GetByte(13) }),
-                BitConverter.ToInt16(new byte[] { buffer.GetByte(14), buffer.GetByte(15) }));
+                BitConverter.ToInt16(new byte[] { buffer.GetByte(14), buffer.GetByte(15) }),
+                BitConverter.ToInt16(new byte[] { buffer.GetByte(16), buffer.GetByte(17) }));
 
             //속도데이터 구성
-            int speed = BitConverter.ToInt16(new byte[] { buffer.GetByte(16), buffer.GetByte(17) });
+            int speed = BitConverter.ToInt16(new byte[] { buffer.GetByte(18), buffer.GetByte(19) });
 
 
             //각정보
-            byte rot = buffer.GetByte(18);
+            byte rot = buffer.GetByte(20);
 
-            UInt16 dataTime = BitConverter.ToUInt16(new byte[] { buffer.GetByte(19), buffer.GetByte(20) });
+            UInt16 dataTime = BitConverter.ToUInt16(new byte[] { buffer.GetByte(21), buffer.GetByte(22) });
 
             UInt16 delyTime = (ushort)(((UInt16)(DateTime.Now.Second * 1000 + DateTime.Now.Millisecond) - dataTime + 60000) % 60000);
 

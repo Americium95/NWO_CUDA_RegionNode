@@ -10,9 +10,10 @@ cudaError_t disFilterWithCuda(float *c, const float4 start, unsigned int size);
 int memFreeWithCuda();
 
 //커널함수 정의
-__global__ void disFilterKernel(float *c,float4 start, const float4 *a)
+__global__ void disFilterKernel(float *c,float4 start, const float4 *a, unsigned int size)
 {
-    int i = threadIdx.x; 
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= size) return;  // 남는 스레드 무시
     if (abs(a[i].x - start.x) + abs(a[i].y - start.y) < 5)
     {
         c[i] = abs(a[i].z - start.z + (a[i].x - start.x) * 2560) + abs(a[i].w - start.w - (a[i].y - start.y) * 2560);
@@ -132,8 +133,11 @@ cudaError_t menCopyWithCuda(const float4* a, unsigned int arraySize)
 // Helper function for using CUDA to add vectors in parallel.
 cudaError_t disFilterWithCuda(float *c, const float4 start, unsigned int size)
 {
-     // 커널실행
-    disFilterKernel << <1, size >> > (dev_c, start, dev_a);
+    unsigned int threadsPerBlock = 256;
+    unsigned int blocks = (size + threadsPerBlock - 1) / threadsPerBlock;
+    // 커널실행
+    disFilterKernel << <blocks, threadsPerBlock >> > (dev_c, start, dev_a, size);
+    //disFilterKernel << <1, size >> > (dev_c, start, dev_a);
 
     // Check for any errors launching the kernel
     cudaStatus = cudaGetLastError();

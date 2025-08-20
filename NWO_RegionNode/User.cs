@@ -5,7 +5,7 @@ using System.Numerics;
 public class User
 {
     public IChannelHandlerContext IChannel;
-    public UInt16 scaffoldingIndex = 0;
+    public UInt32 scaffoldingIndex = 0;
     public int id = 0;
     public Vector3 position = new Vector3();
     public Vector2 tilePosition = new Vector2();
