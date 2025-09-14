@@ -96,7 +96,7 @@ namespace NWO_RegionNode
             moveMentLockStepTimer.AutoReset = true;
             moveMentLockStepTimer.Enabled = true;
 
-            terrainCollision(1414909, 1008634);
+            Terrain.terrainCollision(1414909, 1008634);
 
             Console.ReadLine();
         }
@@ -282,10 +282,10 @@ namespace NWO_RegionNode
             {
                 NetMoveMentData.Value.Angle = (byte)((MathR.MoveTowardsAngle(NetMoveMentData.Value.Angle, NetMoveMentData.Value.targetAngle, 4)+256)%256);
 
-                MoveMent.nwo_Vector3 v = NetMoveMentData.Value.position + new MoveMent.nwo_Vector3((int)(MathF.Sin((float)NetMoveMentData.Value.Angle * 1.406f * MathF.PI / 180) * (NetMoveMentData.Value.speed + 40) * -400 / 1000), 0, (int)(MathF.Cos((float)NetMoveMentData.Value.Angle * 1.4f * MathF.PI / 180) * (NetMoveMentData.Value.speed + 40) * -400 / 1000));
+                MoveMent.nwo_Vector3 v = NetMoveMentData.Value.position + new MoveMent.nwo_Vector3((int)(MathF.Sin((float)NetMoveMentData.Value.Angle * 1.406f * MathF.PI / 180) * (NetMoveMentData.Value.speed + 40) * -400 / 1000), 0, (int)(MathF.Cos((float)NetMoveMentData.Value.Angle * 1.4f * MathF.PI / 180) * (NetMoveMentData.Value.speed + 50) * -400 / 1000));
 
                 //충돌검사
-                float h = terrainCollision(v.X, -v.Z);
+                float h = Terrain.terrainCollision(v.X, -v.Z);
 
                 Console.WriteLine(h);
                 if (h < 2)
@@ -296,6 +296,7 @@ namespace NWO_RegionNode
                 {
                     NetMoveMentData.Value.speed = 0;
                 }
+                float Angle = (byte)MathR.MoveTowardsAngle(NetMoveMentData.Value.Angle, NetMoveMentData.Value.targetAngle, 10);
                 //NetMoveMentData.Value.tilePosition.X += (int)(NetMoveMentData.Value.position.X / 2560);
                 //NetMoveMentData.Value.tilePosition.Y += (int)(NetMoveMentData.Value.position.Z / 2560);
 
@@ -419,29 +420,6 @@ namespace NWO_RegionNode
                 }
             }
 
-        }
-
-        //충돌검사
-        static float terrainCollision(int x,int y)
-        {
-            x -= 256 * 5 + 90;
-            y -= 256 * 5 + 90;
-            string dir = @"E:\NWO\\NWOMAP2\" + (x / 2560 + 3) + "," + (y / 2560 + 3) + ".png";
-            if (File.Exists(dir))
-            {
-                Bitmap bitmap = new Bitmap(dir);
-
-                //Console.WriteLine(bitmap.GetPixel((x%2560)/50, (y % 2560) / 50));
-
-                Color Rgb = bitmap.GetPixel((x % 2560) / 5, (y % 2560) / 5);
-
-                float height = (-10000 + (((Rgb.R << 16) | (Rgb.G << 8) | Rgb.B) * 0.1f)) * (0.15f) * 1.25f;
-
-                bitmap.Dispose();
-
-                return height;
-            }
-            return 0;
         }
 
         static async Task RunServerAsync()

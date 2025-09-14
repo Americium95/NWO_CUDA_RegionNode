@@ -30,5 +30,16 @@
             // 그렇지 않으면 current에서 delta 방향으로 maxDelta만큼 이동
             return current + Math.Sign(delta) * maxDelta;
         }
+
+        public static float MoveTowards(float current, float target, float maxDelta)
+        {
+            if (Math.Abs(target - current) <= maxDelta)
+            {
+                return target;
+            }
+
+            return current + Math.Sign(target - current) * maxDelta;
+        }
+
     }
 }

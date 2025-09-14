@@ -112,8 +112,7 @@ public class EchoServerHandler : ChannelHandlerAdapter
             //오브젝트 인덱스
             Int32 moveMentIndex = BitConverter.ToInt32(new byte[] { buffer.GetByte(2), buffer.GetByte(3), buffer.GetByte(4), buffer.GetByte(5) }, 0);
 
-            //위치데이터 구성
-            MoveMent.nwo_Vector3 UserPosition = new MoveMent.nwo_Vector3(
+            MoveMent.nwo_Vector3 v = new MoveMent.nwo_Vector3(
                 BitConverter.ToInt32(new byte[] { buffer.GetByte(6), buffer.GetByte(7), buffer.GetByte(8), buffer.GetByte(9) }),
                 BitConverter.ToInt16(new byte[] { buffer.GetByte(10), buffer.GetByte(11) }),
                 BitConverter.ToInt32(new byte[] { buffer.GetByte(12), buffer.GetByte(13), buffer.GetByte(14), buffer.GetByte(15) }));
@@ -123,6 +122,12 @@ public class EchoServerHandler : ChannelHandlerAdapter
 
             //각정보
             byte Angle = buffer.GetByte(18);
+
+            //위치데이터 구성
+            MoveMent.nwo_Vector3 UserPosition = v /*+ new MoveMent.nwo_Vector3((int)(MathF.Sin((float)Angle * 1.4f * MathF.PI / 180) * speed * -400 / 1000), 0, (int)(MathF.Cos((float)Angle * 1.4f * MathF.PI / 180) * speed * -400 / 1000))*/;
+            
+            //충돌검사
+            float h = Terrain.terrainCollision(v.X, -v.Z);
               
             //지연시간 계산
             UInt16 dataTime = BitConverter.ToUInt16(new byte[] { buffer.GetByte(19), buffer.GetByte(20) });
@@ -134,22 +139,19 @@ public class EchoServerHandler : ChannelHandlerAdapter
             //데이터 반영
             if (!Program.moveMentTable.TryGetValue(moveMentIndex, out Data))
             {
-                Program.moveMentTable.Add(moveMentIndex, new MoveMent(context, moveMentIndex, UserPosition, speed, Angle));
-
-                Data = Program.moveMentTable[moveMentIndex];
-                Data.position = UserPosition;
-                Data.speed = speed;
-                Data.Angle = Angle;
-                Data.receiveTime = (UInt16)(DateTime.Now.Second * 1000 + DateTime.Now.Millisecond);
+                Data = new MoveMent(context, moveMentIndex, UserPosition, speed, Angle);
+                Program.moveMentTable.Add(moveMentIndex, Data);
             }
+            
+            if (h < 2)
+                Data.position = UserPosition;
             else
-            {
-                Data.position = UserPosition;
-                Data.speed = speed;
-                Data.targetAngle = Angle;
-                Data.Angle = (byte)MathR.MoveTowardsAngle(Data.Angle, Angle, (int)(2 * MathF.Floor(delyTime / 500)));
-                Data.receiveTime = (UInt16)(DateTime.Now.Second * 1000 + DateTime.Now.Millisecond);
-            }
+                speed = 0;
+            Data.speed = speed;
+            Data.targetAngle = Angle;
+            //Data.Angle = Angle;
+            //Data.Angle = (byte)MathR.MoveTowardsAngle(Data.Angle, Angle, (int)(2 * MathF.Floor(delyTime / 500)));
+            Data.receiveTime = (UInt16)(DateTime.Now.Second * 1000 + DateTime.Now.Millisecond);
         }
 
         //오브젝트 위치정보 관성항법 동기화
@@ -176,7 +178,7 @@ public class EchoServerHandler : ChannelHandlerAdapter
             if (Program.moveMentTable.TryGetValue(moveMentIndex, out Data))
             {
                 Data.position = Data.position;
-                Data.speed = speed;
+                Data.speed = (int)MathR.MoveTowards(Data.speed, speed,5f);
                 Data.targetAngle = Angle;
                 Data.receiveTime = (UInt16)(DateTime.Now.Second * 1000 + DateTime.Now.Millisecond);
             }
