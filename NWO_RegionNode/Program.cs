@@ -282,21 +282,23 @@ namespace NWO_RegionNode
             {
                 NetMoveMentData.Value.Angle = (byte)((MathR.MoveTowardsAngle(NetMoveMentData.Value.Angle, NetMoveMentData.Value.targetAngle, 4)+256)%256);
 
-                MoveMent.nwo_Vector3 v = NetMoveMentData.Value.position + new MoveMent.nwo_Vector3((int)(MathF.Sin((float)NetMoveMentData.Value.Angle * 1.406f * MathF.PI / 180) * (NetMoveMentData.Value.speed + 40) * -400 / 1000), 0, (int)(MathF.Cos((float)NetMoveMentData.Value.Angle * 1.4f * MathF.PI / 180) * (NetMoveMentData.Value.speed + 50) * -400 / 1000));
+                MoveMent.nwo_Vector3 v = NetMoveMentData.Value.position + new MoveMent.nwo_Vector3((int)(MathF.Sin((float)NetMoveMentData.Value.Angle * 1.406f * MathF.PI / 180) * (NetMoveMentData.Value.speed/20 + 2.5)), 0, (int)(MathF.Cos((float)NetMoveMentData.Value.Angle * 1.4f * MathF.PI / 180) * (NetMoveMentData.Value.speed/20 + 2.5)));
 
                 //충돌검사
                 float h = Terrain.terrainCollision(v.X, -v.Z);
 
-                Console.WriteLine(h);
-                if (h < 2)
+                if (h < 2.5)
                 {
-                    NetMoveMentData.Value.position = NetMoveMentData.Value.position + new MoveMent.nwo_Vector3((int)(MathF.Sin((float)NetMoveMentData.Value.Angle * 1.4f * MathF.PI / 180) * NetMoveMentData.Value.speed * -400 / 1000), 0, (int)(MathF.Cos((float)NetMoveMentData.Value.Angle * 1.4f * MathF.PI / 180) * NetMoveMentData.Value.speed * -400 / 1000)); ;
+                    NetMoveMentData.Value.speed = MathR.MoveTowards(NetMoveMentData.Value.speed, NetMoveMentData.Value.targetspeed, 1);
                 }
                 else
                 {
                     NetMoveMentData.Value.speed = 0;
                 }
-                float Angle = (byte)MathR.MoveTowardsAngle(NetMoveMentData.Value.Angle, NetMoveMentData.Value.targetAngle, 10);
+
+                NetMoveMentData.Value.position = NetMoveMentData.Value.position + new MoveMent.nwo_Vector3((int)(MathF.Sin((float)NetMoveMentData.Value.Angle * 1.4f * MathF.PI / 180) * NetMoveMentData.Value.speed * -400 / 1000), 0, (int)(MathF.Cos((float)NetMoveMentData.Value.Angle * 1.4f * MathF.PI / 180) * NetMoveMentData.Value.speed * -400 / 1000)); ;
+                
+                float Angle = (byte)MathR.MoveTowardsAngle(NetMoveMentData.Value.Angle, NetMoveMentData.Value.targetAngle, 15);
                 //NetMoveMentData.Value.tilePosition.X += (int)(NetMoveMentData.Value.position.X / 2560);
                 //NetMoveMentData.Value.tilePosition.Y += (int)(NetMoveMentData.Value.position.Z / 2560);
 

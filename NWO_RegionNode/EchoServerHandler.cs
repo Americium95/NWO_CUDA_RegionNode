@@ -1,6 +1,7 @@
 ﻿using DotNetty.Buffers;
 using DotNetty.Transport.Channels;
 using NWO_RegionNode;
+using System.Net.Sockets;
 using System.Numerics;
 using System.Text;
 
@@ -12,6 +13,50 @@ public class EchoServerHandler : ChannelHandlerAdapter
         var buffer = message as IByteBuffer;
 
         //Console.WriteLine("수신:" + buffer.GetByte(0) + "," + buffer.GetByte(1) + "," + buffer.GetByte(2) + "," + buffer.GetByte(3) + "," + buffer.GetByte(4) + "," + buffer.GetByte(5) + "," + buffer.GetByte(6) + "," + buffer.GetByte(7));
+
+        //위치정보 갱신요청
+        if (buffer.GetByte(0) == 2 && buffer.GetByte(1) == 0)
+        {
+            User Data;
+
+            //유저 인덱스(구분자)
+            int userIndex = BitConverter.ToInt16(new byte[] { buffer.GetByte(2), buffer.GetByte(3) }, 0);
+
+            Console.WriteLine("받");
+            //헤더 구성
+            List<byte> packet = new List<byte> { 0x02, 0x00 };
+
+            if (!Program.userTable.TryGetValue(userIndex, out Data))
+            {
+                Data = new User(context, userIndex, new Vector2(554, 394), new Vector3(-3000, 5, 0), 0, 0);
+                Program.userTable.Add(userIndex, Data);
+            }
+            else
+            {
+                Data = new User(context, userIndex, new Vector2(554, 394), new Vector3(-3000, 5, 0), 0, 0);
+            }
+
+
+            //타일 위치데이터 구성
+            packet.AddRange(System.BitConverter.GetBytes((Int16)Data.tilePosition.X));
+            packet.AddRange(System.BitConverter.GetBytes((Int16)Data.tilePosition.Y));
+
+            //Console.WriteLine(NetUserData.Value.tilePosition + "," + NetUserData.Value.position);
+
+            //위치데이터 구성
+            packet.AddRange(System.BitConverter.GetBytes((Int16)Data.position.X));
+            packet.AddRange(System.BitConverter.GetBytes((Int16)Data.position.Y));
+            packet.AddRange(System.BitConverter.GetBytes((Int16)Data.position.Z));
+
+            //속도데이터 구성
+            packet.AddRange(System.BitConverter.GetBytes((Int16)Data.speed));
+
+            //각도 구성
+            packet.Add(Data.rot);
+
+            //전송
+            context.WriteAndFlushAsync(Unpooled.CopiedBuffer(packet.ToArray()));
+        }
 
         //위치정보 동기화
         if (buffer.GetByte(0) == 2 && buffer.GetByte(1) == 1)
@@ -134,8 +179,6 @@ public class EchoServerHandler : ChannelHandlerAdapter
 
             UInt16 delyTime = (ushort)(((UInt16)(DateTime.Now.Second * 1000 + DateTime.Now.Millisecond) - dataTime + 60000) % 60000);
 
-            //Console.WriteLine(dataTime);
-
             //데이터 반영
             if (!Program.moveMentTable.TryGetValue(moveMentIndex, out Data))
             {
@@ -146,8 +189,8 @@ public class EchoServerHandler : ChannelHandlerAdapter
             if (h < 2)
                 Data.position = UserPosition;
             else
-                speed = 0;
-            Data.speed = speed;
+                Data.speed = 0;
+            Data.targetspeed = speed;
             Data.targetAngle = Angle;
             //Data.Angle = Angle;
             //Data.Angle = (byte)MathR.MoveTowardsAngle(Data.Angle, Angle, (int)(2 * MathF.Floor(delyTime / 500)));
@@ -167,6 +210,7 @@ public class EchoServerHandler : ChannelHandlerAdapter
             int speed = BitConverter.ToInt16(new byte[] { buffer.GetByte(6), buffer.GetByte(7) });
 
 
+
             //각정보
             byte Angle = buffer.GetByte(8);
 
@@ -178,7 +222,7 @@ public class EchoServerHandler : ChannelHandlerAdapter
             if (Program.moveMentTable.TryGetValue(moveMentIndex, out Data))
             {
                 Data.position = Data.position;
-                Data.speed = (int)MathR.MoveTowards(Data.speed, speed,5f);
+                Data.targetspeed = speed;
                 Data.targetAngle = Angle;
                 Data.receiveTime = (UInt16)(DateTime.Now.Second * 1000 + DateTime.Now.Millisecond);
             }

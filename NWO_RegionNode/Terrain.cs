@@ -17,17 +17,37 @@ namespace NWO_RegionNode
             string dir = @"E:\NWO\\NWOMAP2\" + (x / 2560 + 3) + "," + (y / 2560 + 3) + ".png";
             if (File.Exists(dir))
             {
-                Bitmap bitmap = new Bitmap(dir);
+                using (Bitmap bitmap = new Bitmap(dir))
+                {
+                    int px = (x % 2560) / 5;
+                    int py = (y % 2560) / 5;
 
-                //Console.WriteLine(bitmap.GetPixel((x%2560)/50, (y % 2560) / 50));
+                    float sumHeight = 0f;
+                    int count = 0;
 
-                Color Rgb = bitmap.GetPixel((x % 2560) / 5, (y % 2560) / 5);
+                    // 3x3 영역 루프
+                    for (int dy = -2; dy <= 2; dy++)
+                    {
+                        for (int dx = -2; dx <= 2; dx++)
+                        {
+                            int nx = px + dx;
+                            int ny = py + dy;
 
-                float height = (-10000 + (((Rgb.R << 16) | (Rgb.G << 8) | Rgb.B) * 0.1f)) * (0.15f) * 1.25f;
+                            // 범위 체크 (이미지 크기 벗어나지 않도록)
+                            if (nx >= 0 && nx < bitmap.Width && ny >= 0 && ny < bitmap.Height)
+                            {
+                                Color rgb = bitmap.GetPixel(nx, ny);
+                                float height = (-10000 + (((rgb.R << 16) | (rgb.G << 8) | rgb.B) * 0.1f)) * 0.15f * 1.25f;
+                                height = height > 1 ? height : -1;
+                                sumHeight += height;
+                                count++;
+                            }
+                        }
+                    }
 
-                bitmap.Dispose();
-
-                return height;
+                    if (count > 0)
+                        return sumHeight / count; // 평균값
+                }
             }
             return 0;
         }

@@ -4,7 +4,8 @@ public class MoveMent
 {
     public Int32 id = 0;
     public nwo_Vector3 position = new nwo_Vector3(0,0,0);
-    public int speed = 0;
+    public int targetspeed = 0;
+    public float speed = 0;
     public byte targetAngle = 0;
     public byte Angle = 0;
     public UInt16 receiveTime = 0;
