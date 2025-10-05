@@ -22,20 +22,32 @@ public class EchoServerHandler : ChannelHandlerAdapter
             //유저 인덱스(구분자)
             int userIndex = BitConverter.ToInt16(new byte[] { buffer.GetByte(2), buffer.GetByte(3) }, 0);
 
-            Console.WriteLine("받");
             //헤더 구성
             List<byte> packet = new List<byte> { 0x02, 0x00 };
 
             if (!Program.userTable.TryGetValue(userIndex, out Data))
             {
-                Data = new User(context, userIndex, new Vector2(554, 394), new Vector3(-3000, 5, 0), 0, 0);
+                Data = new User(context, userIndex, new Vector2(553, 394), new Vector3(-3443, 0, 160), 0, 0);
                 Program.userTable.Add(userIndex, Data);
             }
             else
             {
-                Data = new User(context, userIndex, new Vector2(554, 394), new Vector3(-3000, 5, 0), 0, 0);
+                //Data = new User(context, userIndex, new Vector2(553, 394), new Vector3(-3443, 0, 160), 0, 0);
+                if(Data.scaffoldingIndex>0)
+                {
+                    MoveMent scaffoldingObject = Program.moveMentTable.Values.FirstOrDefault(m => m.id == Data.scaffoldingIndex);
+                    Data.tilePosition.X = (int)scaffoldingObject.position.X / 2560;
+                    Data.tilePosition.Y = -(int)(scaffoldingObject.position.Z / 2560);
+                    //Console.WriteLine(scaffoldingObject.position.X + ":"+ scaffoldingObject.position.Z);
+
+                    Data.position.X += -(scaffoldingObject.position.X % 2560)*10;
+
+                    Data.position.Z += -(scaffoldingObject.position.Z % 2560)*10;
+                }
             }
 
+            //발판 인덱스
+            packet.AddRange(System.BitConverter.GetBytes((Int32)Data.scaffoldingIndex));
 
             //타일 위치데이터 구성
             packet.AddRange(System.BitConverter.GetBytes((Int16)Data.tilePosition.X));
@@ -151,9 +163,41 @@ public class EchoServerHandler : ChannelHandlerAdapter
         }
 
         //오브젝트 위치정보 동기화
+        if (buffer.GetByte(0) == 4 && buffer.GetByte(1) == 0)
+        {
+            MoveMent Data;
+
+            //오브젝트 인덱스
+            Int32 moveMentIndex = BitConverter.ToInt32(new byte[] { buffer.GetByte(2), buffer.GetByte(3), buffer.GetByte(4), buffer.GetByte(5) }, 0);
+
+            MoveMent.nwo_Vector3 UserPosition = new MoveMent.nwo_Vector3(
+                BitConverter.ToInt32(new byte[] { buffer.GetByte(6), buffer.GetByte(7), buffer.GetByte(8), buffer.GetByte(9) }),
+                BitConverter.ToInt16(new byte[] { buffer.GetByte(10), buffer.GetByte(11) }),
+                BitConverter.ToInt32(new byte[] { buffer.GetByte(12), buffer.GetByte(13), buffer.GetByte(14), buffer.GetByte(15) }));
+
+            //속도데이터 구성
+            int speed = BitConverter.ToInt16(new byte[] { buffer.GetByte(16), buffer.GetByte(17) });
+
+            //각정보
+            byte Angle = buffer.GetByte(18);
+
+            //데이터 반영
+            if (!Program.moveMentTable.TryGetValue(moveMentIndex, out Data))
+            {
+                Data = new MoveMent(context, moveMentIndex, UserPosition, speed, Angle);
+                Program.moveMentTable.Add(moveMentIndex, Data);
+            }
+
+            //Data.position = UserPosition;
+            Data.speed = speed;
+            Data.targetspeed = speed;
+        }
+
+        //오브젝트 위치정보 동기화
         if (buffer.GetByte(0) == 4 && buffer.GetByte(1) == 1)
         {
             MoveMent Data;
+
             //오브젝트 인덱스
             Int32 moveMentIndex = BitConverter.ToInt32(new byte[] { buffer.GetByte(2), buffer.GetByte(3), buffer.GetByte(4), buffer.GetByte(5) }, 0);
 

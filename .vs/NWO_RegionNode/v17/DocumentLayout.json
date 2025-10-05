@@ -11,20 +11,24 @@
       "RelativeMoniker": "D:0:0:{06EEF3F2-5CA0-4142-92C8-7C689A00B7C0}|NWO_RegionNode\\NWO_RegionNode.csproj|solutionrelative:nwo_regionnode\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{06EEF3F2-5CA0-4142-92C8-7C689A00B7C0}|NWO_RegionNode\\NWO_RegionNode.csproj|c:\\github\\nwo_cuda_regionnode\\nwo_regionnode\\mathr.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{06EEF3F2-5CA0-4142-92C8-7C689A00B7C0}|NWO_RegionNode\\NWO_RegionNode.csproj|solutionrelative:nwo_regionnode\\mathr.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{06EEF3F2-5CA0-4142-92C8-7C689A00B7C0}|NWO_RegionNode\\NWO_RegionNode.csproj|c:\\github\\nwo_cuda_regionnode\\nwo_regionnode\\movement.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{06EEF3F2-5CA0-4142-92C8-7C689A00B7C0}|NWO_RegionNode\\NWO_RegionNode.csproj|solutionrelative:nwo_regionnode\\movement.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{06EEF3F2-5CA0-4142-92C8-7C689A00B7C0}|NWO_RegionNode\\NWO_RegionNode.csproj|c:\\github\\nwo_cuda_regionnode\\nwo_regionnode\\terrain.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{06EEF3F2-5CA0-4142-92C8-7C689A00B7C0}|NWO_RegionNode\\NWO_RegionNode.csproj|solutionrelative:nwo_regionnode\\terrain.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{06EEF3F2-5CA0-4142-92C8-7C689A00B7C0}|NWO_RegionNode\\NWO_RegionNode.csproj|c:\\github\\nwo_cuda_regionnode\\nwo_regionnode\\user.cs||{8B382828-6202-11D1-8870-0000F87579D2}",
       "RelativeMoniker": "D:0:0:{06EEF3F2-5CA0-4142-92C8-7C689A00B7C0}|NWO_RegionNode\\NWO_RegionNode.csproj|solutionrelative:nwo_regionnode\\user.cs||{8B382828-6202-11D1-8870-0000F87579D2}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{06EEF3F2-5CA0-4142-92C8-7C689A00B7C0}|NWO_RegionNode\\NWO_RegionNode.csproj|c:\\github\\nwo_cuda_regionnode\\nwo_regionnode\\terrain.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{06EEF3F2-5CA0-4142-92C8-7C689A00B7C0}|NWO_RegionNode\\NWO_RegionNode.csproj|solutionrelative:nwo_regionnode\\terrain.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{06EEF3F2-5CA0-4142-92C8-7C689A00B7C0}|NWO_RegionNode\\NWO_RegionNode.csproj|c:\\github\\nwo_cuda_regionnode\\nwo_regionnode\\mathr.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{06EEF3F2-5CA0-4142-92C8-7C689A00B7C0}|NWO_RegionNode\\NWO_RegionNode.csproj|solutionrelative:nwo_regionnode\\mathr.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9670DE46-8FAF-440D-A799-9CF78E58CCA3}|CudaRuntime1\\CudaRuntime1.vcxproj|C:\\GitHub\\NWO_CUDA_RegionNode\\CudaRuntime1\\kernel.cu||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{9670DE46-8FAF-440D-A799-9CF78E58CCA3}|CudaRuntime1\\CudaRuntime1.vcxproj|solutionrelative:CudaRuntime1\\kernel.cu||{8B382828-6202-11D1-8870-0000F87579D2}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{06EEF3F2-5CA0-4142-92C8-7C689A00B7C0}|NWO_RegionNode\\NWO_RegionNode.csproj|c:\\github\\nwo_cuda_regionnode\\nwo_regionnode\\nwo_regionnode.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}",
@@ -63,7 +67,7 @@
               "RelativeDocumentMoniker": "NWO_RegionNode\\EchoServerHandler.cs",
               "ToolTip": "C:\\GitHub\\NWO_CUDA_RegionNode\\NWO_RegionNode\\EchoServerHandler.cs",
               "RelativeToolTip": "NWO_RegionNode\\EchoServerHandler.cs",
-              "ViewState": "AgIAABMAAAAAAAAAAAAAwDgAAAAQAAAAAAAAAA==",
+              "ViewState": "AgIAAL4AAAAAAAAAAAAYwNUAAAAsAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2022-06-16T17:31:00.487Z",
               "EditorCaption": ""
@@ -76,27 +80,37 @@
               "RelativeDocumentMoniker": "NWO_RegionNode\\Program.cs",
               "ToolTip": "C:\\GitHub\\NWO_CUDA_RegionNode\\NWO_RegionNode\\Program.cs",
               "RelativeToolTip": "NWO_RegionNode\\Program.cs",
-              "ViewState": "AgIAAMgAAAAAAAAAAAAkwNgAAABzAAAAAAAAAA==",
+              "ViewState": "AgIAAFABAAAAAAAAAAAEwOYAAABEAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2022-06-16T04:49:18.325Z",
-              "EditorCaption": ""
+              "WhenOpened": "2022-06-16T04:49:18.325Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 6,
+              "Title": "kernel.cu",
+              "DocumentMoniker": "C:\\GitHub\\NWO_CUDA_RegionNode\\CudaRuntime1\\kernel.cu",
+              "RelativeDocumentMoniker": "CudaRuntime1\\kernel.cu",
+              "ToolTip": "C:\\GitHub\\NWO_CUDA_RegionNode\\CudaRuntime1\\kernel.cu",
+              "RelativeToolTip": "CudaRuntime1\\kernel.cu",
+              "ViewState": "AgIAABIAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-10-02T03:59:10.832Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
               "Title": "Terrain.cs",
               "DocumentMoniker": "C:\\GitHub\\NWO_CUDA_RegionNode\\NWO_RegionNode\\Terrain.cs",
               "RelativeDocumentMoniker": "NWO_RegionNode\\Terrain.cs",
               "ToolTip": "C:\\GitHub\\NWO_CUDA_RegionNode\\NWO_RegionNode\\Terrain.cs",
               "RelativeToolTip": "NWO_RegionNode\\Terrain.cs",
-              "ViewState": "AgIAABEAAAAAAAAAAADwvxMAAAAiAAAAAAAAAA==",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAAACAAAAAtAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-14T04:00:29.499Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-09-14T04:00:29.499Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 5,
               "Title": "MathR.cs",
               "DocumentMoniker": "C:\\GitHub\\NWO_CUDA_RegionNode\\NWO_RegionNode\\MathR.cs",
               "RelativeDocumentMoniker": "NWO_RegionNode\\MathR.cs",
@@ -104,8 +118,7 @@
               "RelativeToolTip": "NWO_RegionNode\\MathR.cs",
               "ViewState": "AgIAABIAAAAAAAAAAAAkwCEAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-07T07:52:23.01Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-09-07T07:52:23.01Z"
             },
             {
               "$type": "Document",
@@ -117,25 +130,23 @@
               "RelativeToolTip": "NWO_RegionNode\\User.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAfAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-07T07:29:26.012Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-09-07T07:29:26.012Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 2,
               "Title": "MoveMent.cs",
               "DocumentMoniker": "C:\\GitHub\\NWO_CUDA_RegionNode\\NWO_RegionNode\\MoveMent.cs",
               "RelativeDocumentMoniker": "NWO_RegionNode\\MoveMent.cs",
               "ToolTip": "C:\\GitHub\\NWO_CUDA_RegionNode\\NWO_RegionNode\\MoveMent.cs",
               "RelativeToolTip": "NWO_RegionNode\\MoveMent.cs",
-              "ViewState": "AgIAABgAAAAAAAAAAAAIwAcAAAAQAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAQAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-07T07:18:56.181Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-09-07T07:18:56.181Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 8,
               "Title": "CUDA 13.0.targets",
               "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Microsoft\\VC\\v170\\BuildCustomizations\\CUDA 13.0.targets",
               "RelativeDocumentMoniker": "..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Microsoft\\VC\\v170\\BuildCustomizations\\CUDA 13.0.targets",
@@ -147,7 +158,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 7,
               "Title": "NWO_RegionNode.csproj",
               "DocumentMoniker": "C:\\GitHub\\NWO_CUDA_RegionNode\\NWO_RegionNode\\NWO_RegionNode.csproj",
               "RelativeDocumentMoniker": "NWO_RegionNode\\NWO_RegionNode.csproj",
@@ -159,7 +170,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 9,
               "Title": "kernel.cu",
               "DocumentMoniker": "C:\\GitHub\\NWO_CUDA_RegionNode\\NWO_cuda\\kernel.cu",
               "RelativeDocumentMoniker": "NWO_cuda\\kernel.cu",

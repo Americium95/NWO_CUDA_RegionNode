@@ -26,9 +26,9 @@ namespace NWO_RegionNode
                     int count = 0;
 
                     // 3x3 영역 루프
-                    for (int dy = -2; dy <= 2; dy++)
+                    for (int dy = -1; dy <= 1; dy++)
                     {
-                        for (int dx = -2; dx <= 2; dx++)
+                        for (int dx = -1; dx <= 1; dx++)
                         {
                             int nx = px + dx;
                             int ny = py + dy;

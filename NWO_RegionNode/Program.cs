@@ -282,14 +282,14 @@ namespace NWO_RegionNode
             {
                 NetMoveMentData.Value.Angle = (byte)((MathR.MoveTowardsAngle(NetMoveMentData.Value.Angle, NetMoveMentData.Value.targetAngle, 4)+256)%256);
 
-                MoveMent.nwo_Vector3 v = NetMoveMentData.Value.position + new MoveMent.nwo_Vector3((int)(MathF.Sin((float)NetMoveMentData.Value.Angle * 1.406f * MathF.PI / 180) * (NetMoveMentData.Value.speed/20 + 2.5)), 0, (int)(MathF.Cos((float)NetMoveMentData.Value.Angle * 1.4f * MathF.PI / 180) * (NetMoveMentData.Value.speed/20 + 2.5)));
+                MoveMent.nwo_Vector3 v = NetMoveMentData.Value.position + new MoveMent.nwo_Vector3((int)(MathF.Sin((float)NetMoveMentData.Value.Angle * 1.406f * MathF.PI / 180) * (-NetMoveMentData.Value.speed/50 - 100)), 0, (int)(MathF.Cos((float)NetMoveMentData.Value.Angle * 1.4f * MathF.PI / 180) * (-NetMoveMentData.Value.speed/50 - 100)));
 
                 //충돌검사
                 float h = Terrain.terrainCollision(v.X, -v.Z);
 
                 if (h < 2.5)
                 {
-                    NetMoveMentData.Value.speed = MathR.MoveTowards(NetMoveMentData.Value.speed, NetMoveMentData.Value.targetspeed, 1);
+                    NetMoveMentData.Value.speed = MathR.MoveTowards(NetMoveMentData.Value.speed, NetMoveMentData.Value.targetspeed, 0.5f);
                 }
                 else
                 {
