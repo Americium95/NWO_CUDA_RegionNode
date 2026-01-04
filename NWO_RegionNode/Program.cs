@@ -23,7 +23,7 @@ namespace NWO_RegionNode
 
 
         static public Dictionary<int, User> userTable = new Dictionary<int, User>();
-        static public Dictionary<Int32, MoveMent> moveMentTable = new Dictionary<Int32, MoveMent>();
+        static public Dictionary<UInt32, MoveMent> moveMentTable = new Dictionary<UInt32, MoveMent>();
 
         //관성항법 동기화 주기 카운터
         static int NetWorkRoutine = 0;
@@ -96,7 +96,6 @@ namespace NWO_RegionNode
             moveMentLockStepTimer.AutoReset = true;
             moveMentLockStepTimer.Enabled = true;
 
-            Terrain.terrainCollision(1414909, 1008634);
 
             Console.ReadLine();
         }
@@ -163,8 +162,7 @@ namespace NWO_RegionNode
                             }
                         }*/
 
-                        //cuda브로드케스트
-                        //cuda 연산,결과
+                        //cuda 연산 결과
                         IntPtr resultPtr = exportCppFunctionAdd(c, new float4(broadcastUserData.Value.tilePosition.X, broadcastUserData.Value.tilePosition.Y, broadcastUserData.Value.position.X, broadcastUserData.Value.position.Z), userTable.Count);
 
 
@@ -282,23 +280,47 @@ namespace NWO_RegionNode
             {
                 NetMoveMentData.Value.Angle = (byte)((MathR.MoveTowardsAngle(NetMoveMentData.Value.Angle, NetMoveMentData.Value.targetAngle, 4)+256)%256);
 
-                MoveMent.nwo_Vector3 v = NetMoveMentData.Value.position + new MoveMent.nwo_Vector3((int)(MathF.Sin((float)NetMoveMentData.Value.Angle * 1.406f * MathF.PI / 180) * (-NetMoveMentData.Value.speed/50 - 100)), 0, (int)(MathF.Cos((float)NetMoveMentData.Value.Angle * 1.4f * MathF.PI / 180) * (-NetMoveMentData.Value.speed/50 - 100)));
+                float maxH = float.MinValue;
 
-                //충돌검사
-                float h = Terrain.terrainCollision(v.X, -v.Z);
+                float rad = (float)NetMoveMentData.Value.Angle * 1.406f * MathF.PI / 180f;
+                float dirX = MathF.Sin(rad);
+                float dirZ = MathF.Cos(rad);
 
-                if (h < 2.5)
+                for (int d = 0; d <= 100; d += 5)
                 {
-                    NetMoveMentData.Value.speed = MathR.MoveTowards(NetMoveMentData.Value.speed, NetMoveMentData.Value.targetspeed, 0.5f);
+                    MoveMent.nwo_Vector3 pos =
+                        NetMoveMentData.Value.globalPosition +
+                        new MoveMent.nwo_Vector3(
+                            (int)(dirX * -d),
+                            0,
+                            (int)(dirZ * -d)
+                        );
+
+                    float h = Terrain.terrainCollision(pos.X, -pos.Z);
+
+                    if (h > maxH)
+                        maxH = h;
+                }
+
+                // 최종 최대 높이
+                float resultH = maxH;
+
+
+                if (maxH < 1)
+                {
+                    float acceleration = 0.5f;
+                    float deceleration = 5f;
+                    acceleration = NetMoveMentData.Value.speed <= NetMoveMentData.Value.targetspeed ? acceleration : deceleration;
+                    NetMoveMentData.Value.speed = MathR.MoveTowards(NetMoveMentData.Value.speed, NetMoveMentData.Value.targetspeed, acceleration);
+                    NetMoveMentData.Value.globalPosition = NetMoveMentData.Value.globalPosition + new MoveMent.nwo_Vector3((int)(MathF.Sin((float)NetMoveMentData.Value.Angle * 1.4f * MathF.PI / 180) * NetMoveMentData.Value.speed * -400 / 1000), 0, (int)(MathF.Cos((float)NetMoveMentData.Value.Angle * 1.4f * MathF.PI / 180) * NetMoveMentData.Value.speed * -400 / 1000));
                 }
                 else
                 {
+                    NetMoveMentData.Value.targetspeed = 0;
                     NetMoveMentData.Value.speed = 0;
                 }
-
-                NetMoveMentData.Value.position = NetMoveMentData.Value.position + new MoveMent.nwo_Vector3((int)(MathF.Sin((float)NetMoveMentData.Value.Angle * 1.4f * MathF.PI / 180) * NetMoveMentData.Value.speed * -400 / 1000), 0, (int)(MathF.Cos((float)NetMoveMentData.Value.Angle * 1.4f * MathF.PI / 180) * NetMoveMentData.Value.speed * -400 / 1000)); ;
                 
-                float Angle = (byte)MathR.MoveTowardsAngle(NetMoveMentData.Value.Angle, NetMoveMentData.Value.targetAngle, 15);
+                float Angle = (byte)MathR.MoveTowardsAngle(NetMoveMentData.Value.Angle, NetMoveMentData.Value.targetAngle, 30);
                 //NetMoveMentData.Value.tilePosition.X += (int)(NetMoveMentData.Value.position.X / 2560);
                 //NetMoveMentData.Value.tilePosition.Y += (int)(NetMoveMentData.Value.position.Z / 2560);
 
@@ -349,9 +371,9 @@ namespace NWO_RegionNode
                         //Console.WriteLine(NetUserData.Value.tilePosition + "," + NetUserData.Value.position);
 
                         //위치데이터 구성
-                        packet.AddRange(System.BitConverter.GetBytes((Int32)NetMoveMentData.Value.position.X));
-                        packet.AddRange(System.BitConverter.GetBytes((Int16)NetMoveMentData.Value.position.Y));
-                        packet.AddRange(System.BitConverter.GetBytes((Int32)NetMoveMentData.Value.position.Z));
+                        packet.AddRange(System.BitConverter.GetBytes((Int32)NetMoveMentData.Value.globalPosition.X));
+                        packet.AddRange(System.BitConverter.GetBytes((Int16)NetMoveMentData.Value.globalPosition.Y));
+                        packet.AddRange(System.BitConverter.GetBytes((Int32)NetMoveMentData.Value.globalPosition.Z));
 
                         //속도데이터 구성
                         packet.AddRange(System.BitConverter.GetBytes((Int16)NetMoveMentData.Value.speed));
@@ -368,51 +390,7 @@ namespace NWO_RegionNode
                 //cuda 연산,결과
                 //IntPtr resultPtr = exportCppFunctionAdd(c, new float4(broadcastUserData.Value.tilePosition.X, broadcastUserData.Value.tilePosition.Y, broadcastUserData.Value.position.X, broadcastUserData.Value.position.Z), userTable.Count);
 
-
-                int i = 0;
-
-                //유저 데이터로부터 페킷 생성
-                foreach (KeyValuePair<int, User> userData in userTable)
-                {
-                    break;
-                    //IntPtr currentPtr = IntPtr.Add(resultPtr, i * Marshal.SizeOf(typeof(float)));
-                    //c[i] = Marshal.PtrToStructure<float>(currentPtr);
-
-                    //거리필터
-                    //if (c[i] < 2000)
-                    {
-                        //유저넘버 구성
-                        packet.AddRange(System.BitConverter.GetBytes((Int16)userData.Key));
-
-                        packet.AddRange(System.BitConverter.GetBytes((UInt16)userData.Value.scaffoldingIndex));
-
-                        //타일 위치데이터 구성
-                        packet.AddRange(System.BitConverter.GetBytes((Int16)userData.Value.tilePosition.X));
-                        packet.AddRange(System.BitConverter.GetBytes((Int16)userData.Value.tilePosition.Y));
-
-                        //Console.WriteLine(NetUserData.Value.tilePosition + "," + NetUserData.Value.position);
-
-                        //위치데이터 구성
-                        packet.AddRange(System.BitConverter.GetBytes((Int16)userData.Value.position.X));
-                        packet.AddRange(System.BitConverter.GetBytes((Int16)userData.Value.position.Y));
-                        packet.AddRange(System.BitConverter.GetBytes((Int16)userData.Value.position.Z));
-
-                        //속도데이터 구성
-                        packet.AddRange(System.BitConverter.GetBytes((Int16)userData.Value.speed));
-
-                        //각도 구성
-                        packet.Add(userData.Value.rot);
-
-                        //수신시간 추가
-                        packet.AddRange(System.BitConverter.GetBytes((UInt16)userData.Value.receiveTime));
-
-                        DataCount++;
-                    }
-
-                    i++;
-                }
-
-                //오브젝트 데이터 개수를 보냄
+                                //오브젝트 데이터 개수를 보냄
                 packet.InsertRange(4, System.BitConverter.GetBytes((Int16)DataCount));
 
                 if (DataCount > 0)

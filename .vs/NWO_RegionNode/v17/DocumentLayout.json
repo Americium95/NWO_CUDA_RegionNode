@@ -3,12 +3,16 @@
   "WorkspaceRootPath": "C:\\GitHub\\NWO_CUDA_RegionNode\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{06EEF3F2-5CA0-4142-92C8-7C689A00B7C0}|NWO_RegionNode\\NWO_RegionNode.csproj|c:\\github\\nwo_cuda_regionnode\\nwo_regionnode\\echoserverhandler.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{06EEF3F2-5CA0-4142-92C8-7C689A00B7C0}|NWO_RegionNode\\NWO_RegionNode.csproj|solutionrelative:nwo_regionnode\\echoserverhandler.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{06EEF3F2-5CA0-4142-92C8-7C689A00B7C0}|NWO_RegionNode\\NWO_RegionNode.csproj|c:\\github\\nwo_cuda_regionnode\\nwo_regionnode\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{06EEF3F2-5CA0-4142-92C8-7C689A00B7C0}|NWO_RegionNode\\NWO_RegionNode.csproj|solutionrelative:nwo_regionnode\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{06EEF3F2-5CA0-4142-92C8-7C689A00B7C0}|NWO_RegionNode\\NWO_RegionNode.csproj|c:\\github\\nwo_cuda_regionnode\\nwo_regionnode\\mathr.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{06EEF3F2-5CA0-4142-92C8-7C689A00B7C0}|NWO_RegionNode\\NWO_RegionNode.csproj|solutionrelative:nwo_regionnode\\mathr.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{06EEF3F2-5CA0-4142-92C8-7C689A00B7C0}|NWO_RegionNode\\NWO_RegionNode.csproj|c:\\github\\nwo_cuda_regionnode\\nwo_regionnode\\echoserverhandler.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{06EEF3F2-5CA0-4142-92C8-7C689A00B7C0}|NWO_RegionNode\\NWO_RegionNode.csproj|solutionrelative:nwo_regionnode\\echoserverhandler.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{06EEF3F2-5CA0-4142-92C8-7C689A00B7C0}|NWO_RegionNode\\NWO_RegionNode.csproj|c:\\github\\nwo_cuda_regionnode\\nwo_regionnode\\movement.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -21,10 +25,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{06EEF3F2-5CA0-4142-92C8-7C689A00B7C0}|NWO_RegionNode\\NWO_RegionNode.csproj|c:\\github\\nwo_cuda_regionnode\\nwo_regionnode\\user.cs||{8B382828-6202-11D1-8870-0000F87579D2}",
       "RelativeMoniker": "D:0:0:{06EEF3F2-5CA0-4142-92C8-7C689A00B7C0}|NWO_RegionNode\\NWO_RegionNode.csproj|solutionrelative:nwo_regionnode\\user.cs||{8B382828-6202-11D1-8870-0000F87579D2}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{06EEF3F2-5CA0-4142-92C8-7C689A00B7C0}|NWO_RegionNode\\NWO_RegionNode.csproj|c:\\github\\nwo_cuda_regionnode\\nwo_regionnode\\mathr.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{06EEF3F2-5CA0-4142-92C8-7C689A00B7C0}|NWO_RegionNode\\NWO_RegionNode.csproj|solutionrelative:nwo_regionnode\\mathr.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{9670DE46-8FAF-440D-A799-9CF78E58CCA3}|CudaRuntime1\\CudaRuntime1.vcxproj|C:\\GitHub\\NWO_CUDA_RegionNode\\CudaRuntime1\\kernel.cu||{8B382828-6202-11D1-8870-0000F87579D2}",
@@ -62,27 +62,27 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "EchoServerHandler.cs",
-              "DocumentMoniker": "C:\\GitHub\\NWO_CUDA_RegionNode\\NWO_RegionNode\\EchoServerHandler.cs",
-              "RelativeDocumentMoniker": "NWO_RegionNode\\EchoServerHandler.cs",
-              "ToolTip": "C:\\GitHub\\NWO_CUDA_RegionNode\\NWO_RegionNode\\EchoServerHandler.cs",
-              "RelativeToolTip": "NWO_RegionNode\\EchoServerHandler.cs",
-              "ViewState": "AgIAAL4AAAAAAAAAAAAYwNUAAAAsAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2022-06-16T17:31:00.487Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\GitHub\\NWO_CUDA_RegionNode\\NWO_RegionNode\\Program.cs",
               "RelativeDocumentMoniker": "NWO_RegionNode\\Program.cs",
               "ToolTip": "C:\\GitHub\\NWO_CUDA_RegionNode\\NWO_RegionNode\\Program.cs",
               "RelativeToolTip": "NWO_RegionNode\\Program.cs",
-              "ViewState": "AgIAAFABAAAAAAAAAAAEwOYAAABEAAAAAAAAAA==",
+              "ViewState": "AgIAACYBAAAAAAAAAADwvy4BAAARAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2022-06-16T04:49:18.325Z"
+              "WhenOpened": "2022-06-16T04:49:18.325Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "EchoServerHandler.cs",
+              "DocumentMoniker": "C:\\GitHub\\NWO_CUDA_RegionNode\\NWO_RegionNode\\EchoServerHandler.cs",
+              "RelativeDocumentMoniker": "NWO_RegionNode\\EchoServerHandler.cs",
+              "ToolTip": "C:\\GitHub\\NWO_CUDA_RegionNode\\NWO_RegionNode\\EchoServerHandler.cs",
+              "RelativeToolTip": "NWO_RegionNode\\EchoServerHandler.cs",
+              "ViewState": "AgIAAAsAAAAAAAAAAADwvzMAAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2022-06-16T17:31:00.487Z"
             },
             {
               "$type": "Document",
@@ -90,57 +90,57 @@
               "Title": "kernel.cu",
               "DocumentMoniker": "C:\\GitHub\\NWO_CUDA_RegionNode\\CudaRuntime1\\kernel.cu",
               "RelativeDocumentMoniker": "CudaRuntime1\\kernel.cu",
-              "ToolTip": "C:\\GitHub\\NWO_CUDA_RegionNode\\CudaRuntime1\\kernel.cu",
-              "RelativeToolTip": "CudaRuntime1\\kernel.cu",
-              "ViewState": "AgIAABIAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
+              "ToolTip": "C:\\GitHub\\NWO_CUDA_RegionNode\\CudaRuntime1\\kernel.cu*",
+              "RelativeToolTip": "CudaRuntime1\\kernel.cu*",
+              "ViewState": "AgIAAGAAAAAAAAAAAAAAAFAAAAAlAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
               "WhenOpened": "2025-10-02T03:59:10.832Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
               "Title": "Terrain.cs",
               "DocumentMoniker": "C:\\GitHub\\NWO_CUDA_RegionNode\\NWO_RegionNode\\Terrain.cs",
               "RelativeDocumentMoniker": "NWO_RegionNode\\Terrain.cs",
               "ToolTip": "C:\\GitHub\\NWO_CUDA_RegionNode\\NWO_RegionNode\\Terrain.cs",
               "RelativeToolTip": "NWO_RegionNode\\Terrain.cs",
-              "ViewState": "AgIAAAkAAAAAAAAAAAAAACAAAAAtAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAuwBAAAAAqAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-09-14T04:00:29.499Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 1,
               "Title": "MathR.cs",
               "DocumentMoniker": "C:\\GitHub\\NWO_CUDA_RegionNode\\NWO_RegionNode\\MathR.cs",
               "RelativeDocumentMoniker": "NWO_RegionNode\\MathR.cs",
               "ToolTip": "C:\\GitHub\\NWO_CUDA_RegionNode\\NWO_RegionNode\\MathR.cs",
               "RelativeToolTip": "NWO_RegionNode\\MathR.cs",
-              "ViewState": "AgIAABIAAAAAAAAAAAAkwCEAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAABAAAAAAAAAAAAAAwCEAAABLAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-09-07T07:52:23.01Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 5,
               "Title": "User.cs",
               "DocumentMoniker": "C:\\GitHub\\NWO_CUDA_RegionNode\\NWO_RegionNode\\User.cs",
               "RelativeDocumentMoniker": "NWO_RegionNode\\User.cs",
               "ToolTip": "C:\\GitHub\\NWO_CUDA_RegionNode\\NWO_RegionNode\\User.cs",
               "RelativeToolTip": "NWO_RegionNode\\User.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAfAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAARAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-09-07T07:29:26.012Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 3,
               "Title": "MoveMent.cs",
               "DocumentMoniker": "C:\\GitHub\\NWO_CUDA_RegionNode\\NWO_RegionNode\\MoveMent.cs",
               "RelativeDocumentMoniker": "NWO_RegionNode\\MoveMent.cs",
               "ToolTip": "C:\\GitHub\\NWO_CUDA_RegionNode\\NWO_RegionNode\\MoveMent.cs",
               "RelativeToolTip": "NWO_RegionNode\\MoveMent.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAQAAAAAAAAAA==",
+              "ViewState": "AgIAACMAAAAAAAAAAAD4vx8AAAAPAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-09-07T07:18:56.181Z"
             },

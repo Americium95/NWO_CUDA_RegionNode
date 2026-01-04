@@ -35,14 +35,14 @@ public class EchoServerHandler : ChannelHandlerAdapter
                 //Data = new User(context, userIndex, new Vector2(553, 394), new Vector3(-3443, 0, 160), 0, 0);
                 if(Data.scaffoldingIndex>0)
                 {
-                    MoveMent scaffoldingObject = Program.moveMentTable.Values.FirstOrDefault(m => m.id == Data.scaffoldingIndex);
-                    Data.tilePosition.X = (int)scaffoldingObject.position.X / 2560;
-                    Data.tilePosition.Y = -(int)(scaffoldingObject.position.Z / 2560);
+                    MoveMent scaffoldingObject = Program.moveMentTable[Data.scaffoldingIndex];
+                    Data.tilePosition.X = (int)scaffoldingObject.globalPosition.X / 2560;
+                    Data.tilePosition.Y = -(int)(scaffoldingObject.globalPosition.Z / 2560);
                     //Console.WriteLine(scaffoldingObject.position.X + ":"+ scaffoldingObject.position.Z);
 
-                    Data.position.X += -(scaffoldingObject.position.X % 2560)*10;
+                    Data.position.X += -(scaffoldingObject.globalPosition.X % 2560)*10;
 
-                    Data.position.Z += -(scaffoldingObject.position.Z % 2560)*10;
+                    Data.position.Z += -(scaffoldingObject.globalPosition.Z % 2560)*10;
                 }
             }
 
@@ -168,7 +168,7 @@ public class EchoServerHandler : ChannelHandlerAdapter
             MoveMent Data;
 
             //오브젝트 인덱스
-            Int32 moveMentIndex = BitConverter.ToInt32(new byte[] { buffer.GetByte(2), buffer.GetByte(3), buffer.GetByte(4), buffer.GetByte(5) }, 0);
+            UInt32 moveMentIndex = BitConverter.ToUInt32(new byte[] { buffer.GetByte(2), buffer.GetByte(3), buffer.GetByte(4), buffer.GetByte(5) }, 0);
 
             MoveMent.nwo_Vector3 UserPosition = new MoveMent.nwo_Vector3(
                 BitConverter.ToInt32(new byte[] { buffer.GetByte(6), buffer.GetByte(7), buffer.GetByte(8), buffer.GetByte(9) }),
@@ -199,7 +199,7 @@ public class EchoServerHandler : ChannelHandlerAdapter
             MoveMent Data;
 
             //오브젝트 인덱스
-            Int32 moveMentIndex = BitConverter.ToInt32(new byte[] { buffer.GetByte(2), buffer.GetByte(3), buffer.GetByte(4), buffer.GetByte(5) }, 0);
+            UInt32 moveMentIndex = BitConverter.ToUInt32(new byte[] { buffer.GetByte(2), buffer.GetByte(3), buffer.GetByte(4), buffer.GetByte(5) }, 0);
 
             MoveMent.nwo_Vector3 v = new MoveMent.nwo_Vector3(
                 BitConverter.ToInt32(new byte[] { buffer.GetByte(6), buffer.GetByte(7), buffer.GetByte(8), buffer.GetByte(9) }),
@@ -231,7 +231,7 @@ public class EchoServerHandler : ChannelHandlerAdapter
             }
             
             if (h < 2)
-                Data.position = UserPosition;
+                Data.globalPosition = UserPosition;
             else
                 Data.speed = 0;
             Data.targetspeed = speed;
@@ -246,7 +246,7 @@ public class EchoServerHandler : ChannelHandlerAdapter
         {
             MoveMent Data;
             //유저 인덱스
-            Int32 moveMentIndex = BitConverter.ToInt32(new byte[] { buffer.GetByte(2), buffer.GetByte(3), buffer.GetByte(4), buffer.GetByte(5) }, 0);
+            UInt32 moveMentIndex = BitConverter.ToUInt32(new byte[] { buffer.GetByte(2), buffer.GetByte(3), buffer.GetByte(4), buffer.GetByte(5) }, 0);
 
 
 
@@ -265,7 +265,7 @@ public class EchoServerHandler : ChannelHandlerAdapter
             //데이터 반영
             if (Program.moveMentTable.TryGetValue(moveMentIndex, out Data))
             {
-                Data.position = Data.position;
+                Data.globalPosition = Data.globalPosition;
                 Data.targetspeed = speed;
                 Data.targetAngle = Angle;
                 Data.receiveTime = (UInt16)(DateTime.Now.Second * 1000 + DateTime.Now.Millisecond);

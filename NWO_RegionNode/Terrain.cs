@@ -22,8 +22,11 @@ namespace NWO_RegionNode
                     int px = (x % 2560) / 5;
                     int py = (y % 2560) / 5;
 
-                    float sumHeight = 0f;
-                    int count = 0;
+                    Color rgb = bitmap.GetPixel(px, py);
+                    float height = (-10000 + (((rgb.R << 16) | (rgb.G << 8) | rgb.B) * 0.1f)) * 0.15f * 1.25f;
+                    float sumHeight = height > 0.5 ? height : height - 10;
+
+                    int count = 1;
 
                     // 3x3 영역 루프
                     for (int dy = -1; dy <= 1; dy++)
@@ -36,9 +39,9 @@ namespace NWO_RegionNode
                             // 범위 체크 (이미지 크기 벗어나지 않도록)
                             if (nx >= 0 && nx < bitmap.Width && ny >= 0 && ny < bitmap.Height)
                             {
-                                Color rgb = bitmap.GetPixel(nx, ny);
-                                float height = (-10000 + (((rgb.R << 16) | (rgb.G << 8) | rgb.B) * 0.1f)) * 0.15f * 1.25f;
-                                height = height > 1 ? height : -1;
+                                rgb = bitmap.GetPixel(nx, ny);
+                                height = (-10000 + (((rgb.R << 16) | (rgb.G << 8) | rgb.B) * 0.1f)) * 0.15f * 1.25f;
+                                height = height > 0.5 ? height : height - 10;
                                 sumHeight += height;
                                 count++;
                             }
