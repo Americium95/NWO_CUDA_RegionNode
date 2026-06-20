@@ -14,7 +14,8 @@ namespace NWO_RegionNode
         {
             x -= 256 * 5 + 90;
             y -= 256 * 5 + 90;
-            string dir = @"E:\NWO\\NWOMAP2\" + (x / 2560 + 3) + "," + (y / 2560 + 3) + ".png";
+
+            string dir = @"E:\NWO\\NWOMAP2_beach4\" + (x / 2560 + 3) + "," + (y / 2560 + 3) + ".png";
             if (File.Exists(dir))
             {
                 using (Bitmap bitmap = new Bitmap(dir))

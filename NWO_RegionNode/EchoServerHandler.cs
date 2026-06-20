@@ -22,6 +22,8 @@ public class EchoServerHandler : ChannelHandlerAdapter
             //유저 인덱스(구분자)
             int userIndex = BitConverter.ToInt16(new byte[] { buffer.GetByte(2), buffer.GetByte(3) }, 0);
 
+            Console.WriteLine(userIndex);
+
             //헤더 구성
             List<byte> packet = new List<byte> { 0x02, 0x00 };
 
@@ -214,9 +216,6 @@ public class EchoServerHandler : ChannelHandlerAdapter
 
             //위치데이터 구성
             MoveMent.nwo_Vector3 UserPosition = v /*+ new MoveMent.nwo_Vector3((int)(MathF.Sin((float)Angle * 1.4f * MathF.PI / 180) * speed * -400 / 1000), 0, (int)(MathF.Cos((float)Angle * 1.4f * MathF.PI / 180) * speed * -400 / 1000))*/;
-            
-            //충돌검사
-            float h = Terrain.terrainCollision(v.X, -v.Z);
               
             //지연시간 계산
             UInt16 dataTime = BitConverter.ToUInt16(new byte[] { buffer.GetByte(19), buffer.GetByte(20) });
@@ -230,10 +229,8 @@ public class EchoServerHandler : ChannelHandlerAdapter
                 Program.moveMentTable.Add(moveMentIndex, Data);
             }
             
-            if (h < 2)
-                Data.globalPosition = UserPosition;
-            else
-                Data.speed = 0;
+            
+            Data.globalPosition = UserPosition;
             Data.targetspeed = speed;
             Data.targetAngle = Angle;
             //Data.Angle = Angle;
@@ -265,7 +262,6 @@ public class EchoServerHandler : ChannelHandlerAdapter
             //데이터 반영
             if (Program.moveMentTable.TryGetValue(moveMentIndex, out Data))
             {
-                Data.globalPosition = Data.globalPosition;
                 Data.targetspeed = speed;
                 Data.targetAngle = Angle;
                 Data.receiveTime = (UInt16)(DateTime.Now.Second * 1000 + DateTime.Now.Millisecond);

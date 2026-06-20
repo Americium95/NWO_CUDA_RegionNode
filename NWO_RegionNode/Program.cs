@@ -178,7 +178,8 @@ namespace NWO_RegionNode
                             //if (c[i] < 2000)
                             {
                                 //유저넘버 구성
-                                packet.AddRange(System.BitConverter.GetBytes((Int16)userData.Key));
+                                packet.AddRange(System.BitConverter.GetBytes((Int16)userData.Value.id));
+                               // Console.WriteLine(userData.Value.id);
 
                                 packet.AddRange(System.BitConverter.GetBytes((UInt32)userData.Value.scaffoldingIndex));
 
@@ -243,7 +244,7 @@ namespace NWO_RegionNode
                         {
 
                             //유저넘버 구성
-                            packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Key));
+                            packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Value.id));
 
 
                             //속도데이터 구성
@@ -286,7 +287,7 @@ namespace NWO_RegionNode
                 float dirX = MathF.Sin(rad);
                 float dirZ = MathF.Cos(rad);
 
-                for (int d = 0; d <= 100; d += 5)
+                for (int d = 5; d <= 100; d += 10)
                 {
                     MoveMent.nwo_Vector3 pos =
                         NetMoveMentData.Value.globalPosition +
@@ -306,7 +307,7 @@ namespace NWO_RegionNode
                 float resultH = maxH;
 
 
-                if (maxH < 1)
+                if (maxH < 0.5f)
                 {
                     float acceleration = 0.5f;
                     float deceleration = 5f;
@@ -317,15 +318,10 @@ namespace NWO_RegionNode
                 else
                 {
                     NetMoveMentData.Value.targetspeed = 0;
-                    NetMoveMentData.Value.speed = 0;
+                    NetMoveMentData.Value.speed = -1;
                 }
                 
-                float Angle = (byte)MathR.MoveTowardsAngle(NetMoveMentData.Value.Angle, NetMoveMentData.Value.targetAngle, 30);
-                //NetMoveMentData.Value.tilePosition.X += (int)(NetMoveMentData.Value.position.X / 2560);
-                //NetMoveMentData.Value.tilePosition.Y += (int)(NetMoveMentData.Value.position.Z / 2560);
-
-                //NetMoveMentData.Value.position.X = (int)(NetMoveMentData.Value.position.X % 2560);
-                //NetMoveMentData.Value.position.Z = (int)(NetMoveMentData.Value.position.Z % 2560);
+                float Angle = (byte)MathR.MoveTowardsAngle(NetMoveMentData.Value.Angle, NetMoveMentData.Value.targetAngle, 35);
             }
 
 
@@ -359,7 +355,6 @@ namespace NWO_RegionNode
                 {
                     //본인 제외
                     //if(NetUserData.Key!=broadcastUserData.Key)
-                    //if (false)
                     {
                         //거리 비교
                         //if (DistanceSquared(NetUserData.Value.tilePosition, NetUserData.Value.tilePosition) < 2 && DistanceSquared(NetUserData.Value.position) < 200)
