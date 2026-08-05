@@ -22,7 +22,7 @@ namespace NWO_RegionNode
         unsafe public static extern int cudaMemFree();
 
 
-        static public Dictionary<int, User> userTable = new Dictionary<int, User>();
+        static public Dictionary<UInt32, User> userTable = new Dictionary<UInt32, User>();
         static public Dictionary<UInt32, MoveMent> moveMentTable = new Dictionary<UInt32, MoveMent>();
 
         //관성항법 동기화 주기 카운터
@@ -124,7 +124,7 @@ namespace NWO_RegionNode
                         List<byte> packet = new List<byte> { 0x02, 0x01 };
 
                         //수신 유저id 등록
-                        packet.AddRange(System.BitConverter.GetBytes((Int16)broadcastUserData.Value.id));
+                        packet.AddRange(System.BitConverter.GetBytes((UInt32)broadcastUserData.Value.id));
 
 
 
@@ -169,7 +169,7 @@ namespace NWO_RegionNode
                         int i = 0;
 
                         //유저 데이터로부터 페킷 생성
-                        foreach (KeyValuePair<int, User> userData in userTable)
+                        foreach (KeyValuePair<UInt32, User> userData in userTable)
                         {
                             IntPtr currentPtr = IntPtr.Add(resultPtr, i * Marshal.SizeOf(typeof(float)));
                             c[i] = Marshal.PtrToStructure<float>(currentPtr);
@@ -178,7 +178,7 @@ namespace NWO_RegionNode
                             //if (c[i] < 2000)
                             {
                                 //유저넘버 구성
-                                packet.AddRange(System.BitConverter.GetBytes((Int16)userData.Value.id));
+                                packet.AddRange(System.BitConverter.GetBytes((UInt32)userData.Value.id));
                                // Console.WriteLine(userData.Value.id);
 
                                 packet.AddRange(System.BitConverter.GetBytes((UInt32)userData.Value.scaffoldingIndex));
@@ -210,7 +210,7 @@ namespace NWO_RegionNode
                         }
 
                         //데이터 개수
-                        packet.InsertRange(4, System.BitConverter.GetBytes((Int16)DataCount));
+                        packet.InsertRange(6, System.BitConverter.GetBytes((Int16)DataCount));
 
                         //송신
                         broadcastUserData.Value.IChannel.WriteAndFlushAsync(Unpooled.CopiedBuffer(packet.ToArray()));
@@ -235,7 +235,7 @@ namespace NWO_RegionNode
                     List<byte> packet = new List<byte> { 0x02, 0x02 };
 
                     //유저id 등록
-                    packet.AddRange(System.BitConverter.GetBytes((Int16)broadcastUserData.Value.id));
+                    packet.AddRange(System.BitConverter.GetBytes((UInt32)broadcastUserData.Value.id));
 
                     foreach (var NetUserData in Program.userTable)
                     {
@@ -244,7 +244,7 @@ namespace NWO_RegionNode
                         {
 
                             //유저넘버 구성
-                            packet.AddRange(System.BitConverter.GetBytes((Int16)NetUserData.Value.id));
+                            packet.AddRange(System.BitConverter.GetBytes((UInt32)NetUserData.Value.id));
 
 
                             //속도데이터 구성
@@ -263,7 +263,7 @@ namespace NWO_RegionNode
 
 
                     //데이터 개수를 보냄
-                    packet.InsertRange(4, System.BitConverter.GetBytes((Int16)DataCount));
+                    packet.InsertRange(6, System.BitConverter.GetBytes((Int16)DataCount));
 
                     //송신
                     broadcastUserData.Value.IChannel.WriteAndFlushAsync(Unpooled.CopiedBuffer(packet.ToArray()));
@@ -279,11 +279,11 @@ namespace NWO_RegionNode
             //이동,회전 처리
             foreach (var NetMoveMentData in Program.moveMentTable)
             {
-                NetMoveMentData.Value.Angle = (byte)((MathR.MoveTowardsAngle(NetMoveMentData.Value.Angle, NetMoveMentData.Value.targetAngle, 4)+256)%256);
+                NetMoveMentData.Value.rot = (byte)((MathR.MoveTowardsAngle(NetMoveMentData.Value.rot, NetMoveMentData.Value.targetAngle, 4)+256)%256);
 
                 float maxH = float.MinValue;
 
-                float rad = (float)NetMoveMentData.Value.Angle * 1.406f * MathF.PI / 180f;
+                float rad = (float)NetMoveMentData.Value.rot * 1.406f * MathF.PI / 180f;
                 float dirX = MathF.Sin(rad);
                 float dirZ = MathF.Cos(rad);
 
@@ -312,8 +312,8 @@ namespace NWO_RegionNode
                     float acceleration = 0.5f;
                     float deceleration = 5f;
                     acceleration = NetMoveMentData.Value.speed <= NetMoveMentData.Value.targetspeed ? acceleration : deceleration;
-                    NetMoveMentData.Value.speed = MathR.MoveTowards(NetMoveMentData.Value.speed, NetMoveMentData.Value.targetspeed, acceleration);
-                    NetMoveMentData.Value.globalPosition = NetMoveMentData.Value.globalPosition + new MoveMent.nwo_Vector3((int)(MathF.Sin((float)NetMoveMentData.Value.Angle * 1.4f * MathF.PI / 180) * NetMoveMentData.Value.speed * -400 / 1000), 0, (int)(MathF.Cos((float)NetMoveMentData.Value.Angle * 1.4f * MathF.PI / 180) * NetMoveMentData.Value.speed * -400 / 1000));
+                    NetMoveMentData.Value.speed = (float)MathR.MoveTowards(NetMoveMentData.Value.speed, NetMoveMentData.Value.targetspeed, acceleration);
+                    NetMoveMentData.Value.globalPosition = NetMoveMentData.Value.globalPosition + new MoveMent.nwo_Vector3((int)(MathF.Sin((float)NetMoveMentData.Value.rot * 1.4f * MathF.PI / 180) * NetMoveMentData.Value.speed * -400 / 1000), 0, (int)(MathF.Cos((float)NetMoveMentData.Value.rot * 1.4f * MathF.PI / 180) * NetMoveMentData.Value.speed * -400 / 1000));
                 }
                 else
                 {
@@ -321,7 +321,7 @@ namespace NWO_RegionNode
                     NetMoveMentData.Value.speed = -1;
                 }
                 
-                float Angle = (byte)MathR.MoveTowardsAngle(NetMoveMentData.Value.Angle, NetMoveMentData.Value.targetAngle, 35);
+                float Angle = (byte)MathR.MoveTowardsAngle(NetMoveMentData.Value.rot, NetMoveMentData.Value.targetAngle, 35);
             }
 
 
@@ -346,9 +346,7 @@ namespace NWO_RegionNode
                 List<byte> packet = new List<byte> { 0x04, 0x01 };
 
                 //수신 유저id 등록
-                packet.AddRange(System.BitConverter.GetBytes((Int16)broadcastUserData.Value.id));
-
-
+                packet.AddRange(System.BitConverter.GetBytes((UInt32)broadcastUserData.Value.id));
 
                 //cpu 브로드케스트
                 foreach (var NetMoveMentData in Program.moveMentTable)
@@ -359,9 +357,9 @@ namespace NWO_RegionNode
                         //거리 비교
                         //if (DistanceSquared(NetUserData.Value.tilePosition, NetUserData.Value.tilePosition) < 2 && DistanceSquared(NetUserData.Value.position) < 200)
 
-                        //유저넘버 구성
+                        //오브젝트넘버 구성
                         packet.AddRange(System.BitConverter.GetBytes((Int32)NetMoveMentData.Key));
-
+                        Console.WriteLine("오브젝트번호:" + NetMoveMentData.Key);
 
                         //Console.WriteLine(NetUserData.Value.tilePosition + "," + NetUserData.Value.position);
 
@@ -374,7 +372,7 @@ namespace NWO_RegionNode
                         packet.AddRange(System.BitConverter.GetBytes((Int16)NetMoveMentData.Value.speed));
 
                         //각도 구성
-                        packet.Add(NetMoveMentData.Value.Angle);
+                        packet.Add(NetMoveMentData.Value.rot);
 
 
                         DataCount++;
@@ -385,8 +383,8 @@ namespace NWO_RegionNode
                 //cuda 연산,결과
                 //IntPtr resultPtr = exportCppFunctionAdd(c, new float4(broadcastUserData.Value.tilePosition.X, broadcastUserData.Value.tilePosition.Y, broadcastUserData.Value.position.X, broadcastUserData.Value.position.Z), userTable.Count);
 
-                                //오브젝트 데이터 개수를 보냄
-                packet.InsertRange(4, System.BitConverter.GetBytes((Int16)DataCount));
+                //오브젝트 데이터 개수를 보냄
+                packet.InsertRange(6, System.BitConverter.GetBytes((Int16)DataCount));
 
                 if (DataCount > 0)
                 {
@@ -417,7 +415,7 @@ namespace NWO_RegionNode
                         pipeline.AddLast("echo", new EchoServerHandler());
                     }));
 
-                IChannel bootstrapChannel = await bootstrap.BindAsync(29100);
+                IChannel bootstrapChannel = await bootstrap.BindAsync(19100);
 
                 while (true)
                 {
@@ -442,6 +440,15 @@ namespace NWO_RegionNode
                 }
 
 
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("예외가 발생했습니다.");
+                Console.WriteLine(ex.Message);
+                Console.WriteLine(ex.StackTrace);
+
+                // 또는
+                // Console.WriteLine(ex);
             }
             finally
             {

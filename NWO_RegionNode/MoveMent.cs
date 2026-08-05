@@ -1,17 +1,12 @@
 ﻿using System.Numerics;
 using DotNetty.Transport.Channels;
 
-public class MoveMent
+public class MoveMent : NwoObject
 {
-    public UInt32 id = 0;
-    public nwo_Vector3 globalPosition = new nwo_Vector3(0,0,0);
-    public Vector3 position = new Vector3();
-    public Vector2 tilePosition = new Vector2();
+    public nwo_Vector3 globalPosition = new nwo_Vector3(0, 0, 0);
+    public byte targetRot = 0;
     public int targetspeed = 0;
-    public float speed = 0;
     public byte targetAngle = 0;
-    public byte Angle = 0;
-    public UInt16 receiveTime = 0;
 
     public MoveMent(IChannelHandlerContext context, UInt32 id, nwo_Vector3 position, int spd, byte Angle)
     {
