@@ -68,32 +68,24 @@ float4* dev_a;
 float* dev_c;
 cudaError_t cudaStatus;
 
-extern "C" __declspec(dllexport) int cudaMemCopy(float4* a, int arraySize)
+extern "C" __declspec(dllexport)
+int cudaMemCopy(float4* a, int arraySize)
 {
     menCopyWithCuda(a,arraySize);
     return 0;
 }
 
 
-extern "C" __declspec(dllexport) float* exportCppFunctionAdd(float* dst, float4 start, int arraySize)
+extern "C" __declspec(dllexport)
+float* cudaDisFilter(float* output, float4 start, int arraySize)
 {
-    // Perform GPU computation
-    cudaError_t cudaStatus = disFilterWithCuda(dst, start, arraySize);
-    return dst;
-    /*
-    // Error checking (optional)
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "disFilterWithCuda failed: %s\n", cudaGetErrorString(cudaStatus));
-        // Returning an error code to indicate failure
-        return -1;
-    }
+    disFilterWithCuda(output, start, arraySize);
 
-    // Return the required value
-    return 88888888;
-    */
+    return output;
 }
 
-extern "C" __declspec(dllexport) int cudaMemFree(float4* a, int arraySize)
+extern "C" __declspec(dllexport)
+int cudaMemFree(float4* a, int arraySize)
 {
     memFreeWithCuda();
     return 0;
@@ -104,30 +96,39 @@ cudaError_t menCopyWithCuda(const float4* a, unsigned int arraySize)
 {
     cudaError_t cudaStatus;
 
+    // 입력 float4 배열
     cudaStatus = cudaMalloc((void**)&dev_a, arraySize * sizeof(float4));
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc failed!0");
+        fprintf(stderr, "cudaMalloc dev_a failed\n");
+        return cudaStatus;
+    }
+
+
+    cudaStatus = cudaMemcpy(
+        dev_a,
+        a,
+        arraySize * sizeof(float4),
+        cudaMemcpyHostToDevice
+    );
+
+    if (cudaStatus != cudaSuccess) {
+        fprintf(stderr, "cudaMemcpy dev_a failed\n");
         cudaFree(dev_a);
         return cudaStatus;
     }
 
 
-    // Allocate GPU buffers for three vectors (two input, one output)    .
-    cudaStatus = cudaMalloc((void**)&dev_c, arraySize * sizeof(float4));
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc failed!1");
-        memFreeWithCuda();
-    }
+    // 출력 float 배열
+    cudaStatus = cudaMalloc((void**)&dev_c, arraySize * sizeof(float));
 
-    // gpu버퍼로 입력
-    cudaStatus = cudaMemcpy(dev_a, a, arraySize * sizeof(float4), cudaMemcpyHostToDevice);
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy failed!2");
-        memFreeWithCuda();
+        fprintf(stderr, "cudaMalloc dev_c failed\n");
+        cudaFree(dev_a);
         return cudaStatus;
     }
 
-    return cudaStatus;
+
+    return cudaSuccess;
 }
 
 // Helper function for using CUDA to add vectors in parallel.

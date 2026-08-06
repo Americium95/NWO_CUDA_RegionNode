@@ -9,14 +9,18 @@ using System.Timers;
 
 namespace NWO_RegionNode
 {
+
     public class Program
     {
+        public const int MAX_USER = 65536;
+        public const int MAX_OBJECT = 65536;
+
         // CUDA 함수 선언
         [DllImport("CudaRuntime1.dll", CallingConvention = CallingConvention.Cdecl)]
         unsafe public static extern int cudaMemCopy(float4[] a, int arraySize);
 
         [DllImport("CudaRuntime1.dll", CallingConvention = CallingConvention.Cdecl)]
-        unsafe public static extern IntPtr exportCppFunctionAdd(float[] dst, float4 start, int arraySize);
+        unsafe public static extern IntPtr cudaDisFilter(float[] dst, float4 start, int arraySize);
 
         [DllImport("CudaRuntime1.dll", CallingConvention = CallingConvention.Cdecl)]
         unsafe public static extern int cudaMemFree();
@@ -24,6 +28,9 @@ namespace NWO_RegionNode
 
         static public Dictionary<UInt32, User> userTable = new Dictionary<UInt32, User>();
         static public Dictionary<UInt32, MoveMent> moveMentTable = new Dictionary<UInt32, MoveMent>();
+
+        float4[] userPositionBuffer = new float4[MAX_USER];
+        float4[] objectPositionBuffer = new float4[MAX_OBJECT];
 
         //관성항법 동기화 주기 카운터
         static int NetWorkRoutine = 0;
@@ -57,14 +64,9 @@ namespace NWO_RegionNode
             //vram등록
             cudaMemCopy(a, arraySize);
             //연산,결과
-            IntPtr resultPtr = exportCppFunctionAdd(c, b[1], arraySize);
+            IntPtr resultPtr = cudaDisFilter(c, b[1], arraySize);
             //resultPtr = exportCppFunctionAdd(c, b[1], arraySize);
 
-            for (int i = 0; i < arraySize; i++)
-            {
-                IntPtr currentPtr = IntPtr.Add(resultPtr, i * Marshal.SizeOf(typeof(float)));
-                c[i] = Marshal.PtrToStructure<float>(currentPtr);
-            }
             //메모리 해제
             cudaMemFree();
 
@@ -163,7 +165,7 @@ namespace NWO_RegionNode
                         }*/
 
                         //cuda 연산 결과
-                        IntPtr resultPtr = exportCppFunctionAdd(c, new float4(broadcastUserData.Value.tilePosition.X, broadcastUserData.Value.tilePosition.Y, broadcastUserData.Value.position.X, broadcastUserData.Value.position.Z), userTable.Count);
+                        IntPtr resultPtr = cudaDisFilter(c, new float4(broadcastUserData.Value.tilePosition.X, broadcastUserData.Value.tilePosition.Y, broadcastUserData.Value.position.X, broadcastUserData.Value.position.Z), userTable.Count);
 
 
                         int i = 0;
@@ -171,9 +173,6 @@ namespace NWO_RegionNode
                         //유저 데이터로부터 페킷 생성
                         foreach (KeyValuePair<UInt32, User> userData in userTable)
                         {
-                            IntPtr currentPtr = IntPtr.Add(resultPtr, i * Marshal.SizeOf(typeof(float)));
-                            c[i] = Marshal.PtrToStructure<float>(currentPtr);
-
                             //거리필터
                             //if (c[i] < 2000)
                             {
@@ -336,61 +335,76 @@ namespace NWO_RegionNode
             //vram등록
             //cudaMemCopy(userTable.Select(o => new float4(o.Value.tilePosition.X, o.Value.tilePosition.Y, o.Value.position.X, o.Value.position.Z)).ToArray(), userTable.Count);
             //결과버퍼
-            float[] c = new float[userTable.Count];
-
-            foreach (var broadcastUserData in Program.userTable)
+            try
             {
-                int DataCount = 0;
+                //vram등록
+                cudaMemCopy(moveMentTable.Select(o => new float4(o.Value.tilePosition.X, o.Value.tilePosition.Y, o.Value.position.X, o.Value.position.Z)).ToArray(), moveMentTable.Count);
+                //결과버퍼
+                float[] c = new float[userTable.Count];
 
-                //헤더 구성
-                List<byte> packet = new List<byte> { 0x04, 0x01 };
-
-                //수신 유저id 등록
-                packet.AddRange(System.BitConverter.GetBytes((UInt32)broadcastUserData.Value.id));
-
-                //cpu 브로드케스트
-                foreach (var NetMoveMentData in Program.moveMentTable)
+                foreach (var broadcastUserData in Program.userTable)
                 {
-                    //본인 제외
-                    //if(NetUserData.Key!=broadcastUserData.Key)
+                    int DataCount = 0;
+
+                    //cuda 연산 결과
+                    IntPtr resultPtr = cudaDisFilter(c, new float4(broadcastUserData.Value.tilePosition.X, broadcastUserData.Value.tilePosition.Y, broadcastUserData.Value.position.X, broadcastUserData.Value.position.Z), userTable.Count);
+
+
+                    //헤더 구성
+                    List<byte> packet = new List<byte> { 0x04, 0x01 };
+
+                    //수신 유저id 등록
+                    packet.AddRange(System.BitConverter.GetBytes((UInt32)broadcastUserData.Value.id));
+
+                    //cpu 브로드케스트
+                    foreach (var NetMoveMentData in Program.moveMentTable)
                     {
-                        //거리 비교
-                        //if (DistanceSquared(NetUserData.Value.tilePosition, NetUserData.Value.tilePosition) < 2 && DistanceSquared(NetUserData.Value.position) < 200)
+                        //본인 제외
+                        //if(NetUserData.Key!=broadcastUserData.Key)
+                        {
+                            //거리 비교
+                            //if (DistanceSquared(NetUserData.Value.tilePosition, NetUserData.Value.tilePosition) < 2 && DistanceSquared(NetUserData.Value.position) < 200)
 
-                        //오브젝트넘버 구성
-                        packet.AddRange(System.BitConverter.GetBytes((Int32)NetMoveMentData.Key));
-                        Console.WriteLine("오브젝트번호:" + NetMoveMentData.Key);
+                            //오브젝트넘버 구성
+                            packet.AddRange(System.BitConverter.GetBytes((Int32)NetMoveMentData.Key));
+                            Console.WriteLine("오브젝트번호:" + NetMoveMentData.Key);
 
-                        //Console.WriteLine(NetUserData.Value.tilePosition + "," + NetUserData.Value.position);
+                            //Console.WriteLine(NetUserData.Value.tilePosition + "," + NetUserData.Value.position);
 
-                        //위치데이터 구성
-                        packet.AddRange(System.BitConverter.GetBytes((Int32)NetMoveMentData.Value.globalPosition.X));
-                        packet.AddRange(System.BitConverter.GetBytes((Int16)NetMoveMentData.Value.globalPosition.Y));
-                        packet.AddRange(System.BitConverter.GetBytes((Int32)NetMoveMentData.Value.globalPosition.Z));
+                            //위치데이터 구성
+                            packet.AddRange(System.BitConverter.GetBytes((Int32)NetMoveMentData.Value.globalPosition.X));
+                            packet.AddRange(System.BitConverter.GetBytes((Int16)NetMoveMentData.Value.globalPosition.Y));
+                            packet.AddRange(System.BitConverter.GetBytes((Int32)NetMoveMentData.Value.globalPosition.Z));
 
-                        //속도데이터 구성
-                        packet.AddRange(System.BitConverter.GetBytes((Int16)NetMoveMentData.Value.speed));
+                            //속도데이터 구성
+                            packet.AddRange(System.BitConverter.GetBytes((Int16)NetMoveMentData.Value.speed));
 
-                        //각도 구성
-                        packet.Add(NetMoveMentData.Value.rot);
+                            //각도 구성
+                            packet.Add(NetMoveMentData.Value.rot);
 
 
-                        DataCount++;
+                            DataCount++;
+                        }
+                    }
+
+                    //cuda브로드케스트
+                    //cuda 연산,결과
+                    //IntPtr resultPtr = exportCppFunctionAdd(c, new float4(broadcastUserData.Value.tilePosition.X, broadcastUserData.Value.tilePosition.Y, broadcastUserData.Value.position.X, broadcastUserData.Value.position.Z), userTable.Count);
+
+                    //오브젝트 데이터 개수를 보냄
+                    packet.InsertRange(6, System.BitConverter.GetBytes((Int16)DataCount));
+
+                    if (DataCount > 0)
+                    {
+                        //송신
+                        broadcastUserData.Value.IChannel.WriteAndFlushAsync(Unpooled.CopiedBuffer(packet.ToArray()));
                     }
                 }
-
-                //cuda브로드케스트
-                //cuda 연산,결과
-                //IntPtr resultPtr = exportCppFunctionAdd(c, new float4(broadcastUserData.Value.tilePosition.X, broadcastUserData.Value.tilePosition.Y, broadcastUserData.Value.position.X, broadcastUserData.Value.position.Z), userTable.Count);
-
-                //오브젝트 데이터 개수를 보냄
-                packet.InsertRange(6, System.BitConverter.GetBytes((Int16)DataCount));
-
-                if (DataCount > 0)
-                {
-                    //송신
-                    broadcastUserData.Value.IChannel.WriteAndFlushAsync(Unpooled.CopiedBuffer(packet.ToArray()));
-                }
+            }
+            finally
+            {
+                //vram 해제
+                cudaMemFree();
             }
 
         }
