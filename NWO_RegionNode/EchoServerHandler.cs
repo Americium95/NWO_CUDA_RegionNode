@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Net.Sockets;
 using System.Numerics;
 using System.Text;
+using static MoveMent;
 
 public class EchoServerHandler : ChannelHandlerAdapter
 {
@@ -263,6 +264,56 @@ public class EchoServerHandler : ChannelHandlerAdapter
                 Data.targetspeed = speed;
                 Data.targetAngle = Angle;
                 Data.receiveTime = (UInt16)(DateTime.Now.Second * 1000 + DateTime.Now.Millisecond);
+            }
+        }
+
+        //Empty Packet
+        if (buffer.GetByte(0) == 4 && buffer.GetByte(1) == 3)
+        {
+
+        }
+
+        //공격
+        if (buffer.GetByte(0) == 4 && buffer.GetByte(1) == 4)
+        {
+            UInt32 userNumber = BitConverter.ToUInt32(new byte[] { buffer.GetByte(2), buffer.GetByte(3), buffer.GetByte(4), buffer.GetByte(5) }, 0);
+            byte bulletType = buffer.GetByte(6);
+            Int32 startX = BitConverter.ToInt32(new byte[] { buffer.GetByte(7), buffer.GetByte(8), buffer.GetByte(9), buffer.GetByte(10) }, 0);
+            Int16 startY = BitConverter.ToInt16(new byte[] { buffer.GetByte(11), buffer.GetByte(12) }, 0);
+            Int32 startZ = BitConverter.ToInt32(new byte[] { buffer.GetByte(13), buffer.GetByte(14), buffer.GetByte(15), buffer.GetByte(16) }, 0);
+            Int32 endX = BitConverter.ToInt32(new byte[] { buffer.GetByte(17), buffer.GetByte(18), buffer.GetByte(19), buffer.GetByte(20) }, 0);
+            Int16 endY = BitConverter.ToInt16(new byte[] { buffer.GetByte(21), buffer.GetByte(22) }, 0);
+            Int32 endZ = BitConverter.ToInt32(new byte[] { buffer.GetByte(23), buffer.GetByte(24), buffer.GetByte(25), buffer.GetByte(26) }, 0);
+            Int16 heightRaw = BitConverter.ToInt16(new byte[] { buffer.GetByte(27), buffer.GetByte(28) }, 0);
+
+            float height = heightRaw / 10f;
+            Vector3 start = new Vector3(startX, startY / 10f, startZ);
+            Vector3 end = new Vector3(endX, endY / 10f, endZ);
+
+            foreach (KeyValuePair<UInt32, MoveMent> pair in Program.moveMentTable)
+            {
+                if (pair.Key == userNumber)
+                    continue;
+
+                nwo_Vector3 p = pair.Value.globalPosition;
+
+                for (int i = 0; i <= 4; i++)
+                {
+                    float t = i * 0.25f;
+                    float x = start.X + (end.X - start.X) * t;
+                    float y = start.Y + (end.Y - start.Y) * t + height * 4f * t * (1f - t);
+                    float z = start.Z + (end.Z - start.Z) * t;
+
+                    float dx = p.X - x;
+                    float dy = p.Y - y;
+                    float dz = p.Z - z;
+
+                    if (dx * dx + dy * dy + dz * dz <= 25f)
+                    {
+                        // 충돌 처리
+                        break;
+                    }
+                }
             }
         }
 

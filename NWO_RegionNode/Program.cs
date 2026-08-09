@@ -340,14 +340,14 @@ namespace NWO_RegionNode
                 //vram등록
                 cudaMemCopy(moveMentTable.Select(o => new float4(o.Value.tilePosition.X, o.Value.tilePosition.Y, o.Value.position.X, o.Value.position.Z)).ToArray(), moveMentTable.Count);
                 //결과버퍼
-                float[] c = new float[userTable.Count];
+                float[] c = new float[moveMentTable.Count];
 
                 foreach (var broadcastUserData in Program.userTable)
                 {
                     int DataCount = 0;
 
                     //cuda 연산 결과
-                    IntPtr resultPtr = cudaDisFilter(c, new float4(broadcastUserData.Value.tilePosition.X, broadcastUserData.Value.tilePosition.Y, broadcastUserData.Value.position.X, broadcastUserData.Value.position.Z), userTable.Count);
+                    IntPtr resultPtr = cudaDisFilter(c, new float4(broadcastUserData.Value.tilePosition.X, broadcastUserData.Value.tilePosition.Y, broadcastUserData.Value.position.X, broadcastUserData.Value.position.Z), moveMentTable.Count);
 
 
                     //헤더 구성
@@ -367,7 +367,6 @@ namespace NWO_RegionNode
 
                             //오브젝트넘버 구성
                             packet.AddRange(System.BitConverter.GetBytes((Int32)NetMoveMentData.Key));
-                            Console.WriteLine("오브젝트번호:" + NetMoveMentData.Key);
 
                             //Console.WriteLine(NetUserData.Value.tilePosition + "," + NetUserData.Value.position);
 
@@ -406,7 +405,6 @@ namespace NWO_RegionNode
                 //vram 해제
                 cudaMemFree();
             }
-
         }
 
         static async Task RunServerAsync()

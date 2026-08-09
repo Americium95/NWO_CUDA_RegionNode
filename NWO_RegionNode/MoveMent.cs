@@ -8,6 +8,8 @@ public class MoveMent : NwoObject
     public int targetspeed = 0;
     public byte targetAngle = 0;
 
+    public BoundingBox shipBound = new BoundingBox(new Vector3(0, 0, 0), new Vector3(5, 5, 5));
+
     public MoveMent(IChannelHandlerContext context, UInt32 id, nwo_Vector3 position, int spd, byte Angle)
     {
         this.id = id;
