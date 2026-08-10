@@ -15,15 +15,34 @@ namespace NWO_RegionNode
         public const int MAX_USER = 65536;
         public const int MAX_OBJECT = 65536;
 
-        // CUDA 함수 선언
         [DllImport("CudaRuntime1.dll", CallingConvention = CallingConvention.Cdecl)]
-        unsafe public static extern int cudaMemCopy(float4[] a, int arraySize);
+        public static extern int cudaUserMemCopy(
+            float4[] a,
+            int arraySize);
 
         [DllImport("CudaRuntime1.dll", CallingConvention = CallingConvention.Cdecl)]
-        unsafe public static extern IntPtr cudaDisFilter(float[] dst, float4 start, int arraySize);
+        public static extern IntPtr cudaUserDisFilter(
+            float[] dst,
+            float4 start,
+            int arraySize);
 
         [DllImport("CudaRuntime1.dll", CallingConvention = CallingConvention.Cdecl)]
-        unsafe public static extern int cudaMemFree();
+        public static extern int cudaUserMemFree();
+
+
+        [DllImport("CudaRuntime1.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern int cudaMoveMentMemCopy(
+            float4[] a,
+            int arraySize);
+
+        [DllImport("CudaRuntime1.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr cudaMoveMentDisFilter(
+            float[] dst,
+            float4 start,
+            int arraySize);
+
+        [DllImport("CudaRuntime1.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern int cudaMoveMentMemFree();
 
 
         static public Dictionary<UInt32, User> userTable = new Dictionary<UInt32, User>();
@@ -62,13 +81,13 @@ namespace NWO_RegionNode
 
 
             //vram등록
-            cudaMemCopy(a, arraySize);
+            cudaUserMemCopy(a, arraySize);
             //연산,결과
-            IntPtr resultPtr = cudaDisFilter(c, b[1], arraySize);
+            IntPtr resultPtr = cudaUserDisFilter(c, b[1], arraySize);
             //resultPtr = exportCppFunctionAdd(c, b[1], arraySize);
 
             //메모리 해제
-            cudaMemFree();
+            cudaUserMemFree();
 
             //Console.WriteLine(cudaStatus);
             /*if (cudaStatus != cudaError_t.Success)
@@ -114,7 +133,7 @@ namespace NWO_RegionNode
                 try
                 {
                     //vram등록
-                    cudaMemCopy(userTable.Select(o => new float4(o.Value.tilePosition.X, o.Value.tilePosition.Y, o.Value.position.X, o.Value.position.Z)).ToArray(), userTable.Count);
+                    cudaUserMemCopy(userTable.Select(o => new float4(o.Value.tilePosition.X, o.Value.tilePosition.Y, o.Value.position.X, o.Value.position.Z)).ToArray(), userTable.Count);
                     //결과버퍼
                     float[] c = new float[userTable.Count];
 
@@ -165,7 +184,7 @@ namespace NWO_RegionNode
                         }*/
 
                         //cuda 연산 결과
-                        IntPtr resultPtr = cudaDisFilter(c, new float4(broadcastUserData.Value.tilePosition.X, broadcastUserData.Value.tilePosition.Y, broadcastUserData.Value.position.X, broadcastUserData.Value.position.Z), userTable.Count);
+                        IntPtr resultPtr = cudaUserDisFilter(c, new float4(broadcastUserData.Value.tilePosition.X, broadcastUserData.Value.tilePosition.Y, broadcastUserData.Value.position.X, broadcastUserData.Value.position.Z), userTable.Count);
 
 
                         int i = 0;
@@ -220,7 +239,7 @@ namespace NWO_RegionNode
                 finally
                 {
                     //vram 해제
-                    cudaMemFree();
+                    cudaUserMemFree();
                 }
             }
             //관성항법 동기화
@@ -338,16 +357,18 @@ namespace NWO_RegionNode
             try
             {
                 //vram등록
-                cudaMemCopy(moveMentTable.Select(o => new float4(o.Value.tilePosition.X, o.Value.tilePosition.Y, o.Value.position.X, o.Value.position.Z)).ToArray(), moveMentTable.Count);
+                cudaMoveMentMemCopy(moveMentTable.Select(o => new float4(o.Value.tilePosition.X, o.Value.tilePosition.Y, o.Value.position.X, o.Value.position.Z)).ToArray(), moveMentTable.Count);
                 //결과버퍼
                 float[] c = new float[moveMentTable.Count];
 
+                if (moveMentTable.Count == 0)
+                    return;
                 foreach (var broadcastUserData in Program.userTable)
                 {
                     int DataCount = 0;
 
                     //cuda 연산 결과
-                    IntPtr resultPtr = cudaDisFilter(c, new float4(broadcastUserData.Value.tilePosition.X, broadcastUserData.Value.tilePosition.Y, broadcastUserData.Value.position.X, broadcastUserData.Value.position.Z), moveMentTable.Count);
+                    IntPtr resultPtr = cudaMoveMentDisFilter(c, new float4(broadcastUserData.Value.tilePosition.X, broadcastUserData.Value.tilePosition.Y, broadcastUserData.Value.position.X, broadcastUserData.Value.position.Z), moveMentTable.Count);
 
 
                     //헤더 구성
@@ -403,7 +424,7 @@ namespace NWO_RegionNode
             finally
             {
                 //vram 해제
-                cudaMemFree();
+                cudaMoveMentMemFree();
             }
         }
 

@@ -3,179 +3,449 @@
 
 #include <stdio.h> 
 
-//메모리 쓰기
-cudaError_t menCopyWithCuda(const float4* a, unsigned int arraySize);
-//거리연산
-cudaError_t disFilterWithCuda(float *c, const float4 start, unsigned int size);
-int memFreeWithCuda();
 
-//커널함수 정의
-__global__ void disFilterKernel(float *c,float4 start, const float4 *a, unsigned int size)
+// ============================================================
+// CUDA Kernel
+// ============================================================
+
+__global__ void disFilterKernel(
+    float* c,
+    float4 start,
+    const float4* a,
+    unsigned int size)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= size) return;  // 남는 스레드 무시
+
+    if (i >= size)
+        return;
+
     if (abs(a[i].x - start.x) + abs(a[i].y - start.y) < 5)
     {
-        c[i] = abs(a[i].z - start.z + (a[i].x - start.x) * 2560) + abs(a[i].w - start.w - (a[i].y - start.y) * 2560);
+        c[i] =
+            abs(a[i].z - start.z +
+                (a[i].x - start.x) * 2560)
+            +
+            abs(a[i].w - start.w -
+                (a[i].y - start.y) * 2560);
     }
     else
+    {
         c[i] = 100000;
+    }
 }
 
+// ============================================================
+// CUDA 전역 메모리
+// ============================================================
 
-//CUDA디버깅용
-int main()
+float4* dev_user_a = nullptr;
+float* dev_user_c = nullptr;
+
+float4* dev_movement_a = nullptr;
+float* dev_movement_c = nullptr;
+
+
+// ============================================================
+// User
+// ============================================================
+
+cudaError_t userMemCopyWithCuda(
+    const float4* a,
+    unsigned int arraySize);
+
+cudaError_t userDisFilterWithCuda(
+    float* c,
+    const float4 start,
+    unsigned int size);
+
+int userMemFreeWithCuda();
+
+
+// ============================================================
+// Movement
+// ============================================================
+
+cudaError_t movementMemCopyWithCuda(
+    const float4* a,
+    unsigned int arraySize);
+
+cudaError_t movementDisFilterWithCuda(
+    float* c,
+    const float4 start,
+    unsigned int size);
+
+int movementMemFreeWithCuda();
+
+
+// ============================================================
+// Export - User
+// ============================================================
+
+extern "C" __declspec(dllexport)
+int cudaUserMemCopy(float4* a, int arraySize)
 {
-    const int arraySize = 5;
-    const float4 a[arraySize] = { {1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}, {13, 14, 15} };
-    const float4 b[arraySize] = { {15,14,13}, {12,11,10}, {9,8,7}, {6,5,4}, {3,2,1} };
-    float c[arraySize] = { -1 };
-
-    // Add vectors in parallel.
-    cudaError_t cudaStatus = menCopyWithCuda(a,arraySize);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "addWithCuda failed!");
-        return 1;
-    }
-    cudaStatus = disFilterWithCuda(c,b[0], arraySize);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "addWithCuda failed!");
-        return 1;
-    }
-
-    // 결과 출력
-    for (int i = 0; i < arraySize; ++i) {
-        printf("%d:{%.1f, %.1f, %.1f} + {%.1f, %.1f, %.1f} = {%.1f}\n", i,
-            a[i].x, a[i].y, a[i].z,
-            b[0].x, b[0].y, b[0].z,
-            c[i]);
-    }
-
-    // cudaDeviceReset must be called before exiting in order for profiling and
-    // tracing tools such as Nsight and Visual Profiler to show complete traces.
-    cudaStatus = cudaDeviceReset();
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaDeviceReset failed!");
-        return 1;
-    }
-
+    userMemCopyWithCuda(a, arraySize);
     return 0;
 }
 
-
-// Perform GPU computation
-float4* dev_a;
-float* dev_c;
-cudaError_t cudaStatus;
-
 extern "C" __declspec(dllexport)
-int cudaMemCopy(float4* a, int arraySize)
+float* cudaUserDisFilter(
+    float* output,
+    float4 start,
+    int arraySize)
 {
-    menCopyWithCuda(a,arraySize);
-    return 0;
-}
-
-
-extern "C" __declspec(dllexport)
-float* cudaDisFilter(float* output, float4 start, int arraySize)
-{
-    disFilterWithCuda(output, start, arraySize);
+    userDisFilterWithCuda(output, start, arraySize);
 
     return output;
 }
 
 extern "C" __declspec(dllexport)
-int cudaMemFree(float4* a, int arraySize)
+int cudaUserMemFree()
 {
-    memFreeWithCuda();
-    return 0;
+    return userMemFreeWithCuda();
 }
 
 
-cudaError_t menCopyWithCuda(const float4* a, unsigned int arraySize)
+// ============================================================
+// Export - Movement
+// ============================================================
+
+extern "C" __declspec(dllexport)
+int cudaMoveMentMemCopy(float4* a, int arraySize)
+{
+    movementMemCopyWithCuda(a, arraySize);
+    return 0;
+}
+
+extern "C" __declspec(dllexport)
+float* cudaMoveMentDisFilter(
+    float* output,
+    float4 start,
+    int arraySize)
+{
+    movementDisFilterWithCuda(
+        output,
+        start,
+        arraySize);
+
+    return output;
+}
+
+extern "C" __declspec(dllexport)
+int cudaMoveMentMemFree()
+{
+    return movementMemFreeWithCuda();
+}
+
+
+// ============================================================
+// User - GPU 메모리 복사
+// ============================================================
+
+cudaError_t userMemCopyWithCuda(
+    const float4* a,
+    unsigned int arraySize)
 {
     cudaError_t cudaStatus;
 
-    // 입력 float4 배열
-    cudaStatus = cudaMalloc((void**)&dev_a, arraySize * sizeof(float4));
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc dev_a failed\n");
+    cudaStatus = cudaMalloc(
+        (void**)&dev_user_a,
+        arraySize * sizeof(float4));
+
+    if (cudaStatus != cudaSuccess)
+    {
+        fprintf(
+            stderr,
+            "cudaMalloc dev_user_a failed\n");
+
         return cudaStatus;
     }
-
 
     cudaStatus = cudaMemcpy(
-        dev_a,
+        dev_user_a,
         a,
         arraySize * sizeof(float4),
-        cudaMemcpyHostToDevice
-    );
+        cudaMemcpyHostToDevice);
 
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy dev_a failed\n");
-        cudaFree(dev_a);
+    if (cudaStatus != cudaSuccess)
+    {
+        fprintf(
+            stderr,
+            "cudaMemcpy dev_user_a failed\n");
+
+        cudaFree(dev_user_a);
+        dev_user_a = nullptr;
+
         return cudaStatus;
     }
 
+    cudaStatus = cudaMalloc(
+        (void**)&dev_user_c,
+        arraySize * sizeof(float));
 
-    // 출력 float 배열
-    cudaStatus = cudaMalloc((void**)&dev_c, arraySize * sizeof(float));
+    if (cudaStatus != cudaSuccess)
+    {
+        fprintf(
+            stderr,
+            "cudaMalloc dev_user_c failed\n");
 
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc dev_c failed\n");
-        cudaFree(dev_a);
+        cudaFree(dev_user_a);
+        dev_user_a = nullptr;
+
         return cudaStatus;
     }
-
 
     return cudaSuccess;
 }
 
-// Helper function for using CUDA to add vectors in parallel.
-cudaError_t disFilterWithCuda(float *c, const float4 start, unsigned int size)
+
+// ============================================================
+// User - GPU 연산
+// ============================================================
+
+cudaError_t userDisFilterWithCuda(
+    float* c,
+    const float4 start,
+    unsigned int size)
 {
     unsigned int threadsPerBlock = 256;
-    unsigned int blocks = (size + threadsPerBlock - 1) / threadsPerBlock;
-    // 커널실행
-    disFilterKernel << <blocks, threadsPerBlock >> > (dev_c, start, dev_a, size);
-    //disFilterKernel << <1, size >> > (dev_c, start, dev_a);
 
-    // Check for any errors launching the kernel
-    cudaStatus = cudaGetLastError();
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "addKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
-        memFreeWithCuda();
+    unsigned int blocks =
+        (size + threadsPerBlock - 1)
+        / threadsPerBlock;
+
+    disFilterKernel << <blocks, threadsPerBlock >> > (
+        dev_user_c,
+        start,
+        dev_user_a,
+        size);
+
+    cudaError_t cudaStatus =
+        cudaGetLastError();
+
+    if (cudaStatus != cudaSuccess)
+    {
+        fprintf(
+            stderr,
+            "user kernel launch failed: %s\n",
+            cudaGetErrorString(cudaStatus));
+
+        userMemFreeWithCuda();
+
         return cudaStatus;
     }
 
-    // cudaDeviceSynchronize waits for the kernel to finish, and returns
-    // any errors encountered during the launch.
-    cudaStatus = cudaDeviceSynchronize();
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching addKernel!\n", cudaStatus);
-        memFreeWithCuda();
-    }
+    cudaStatus =
+        cudaDeviceSynchronize();
 
-    // 출력결과 메모리로 복사
-    cudaStatus = cudaMemcpy(c, dev_c, size * sizeof(float), cudaMemcpyDeviceToHost);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy failed!3");
-        memFreeWithCuda();
+    if (cudaStatus != cudaSuccess)
+    {
+        fprintf(
+            stderr,
+            "user cudaDeviceSynchronize failed: %s\n",
+            cudaGetErrorString(cudaStatus));
+
+        userMemFreeWithCuda();
+
         return cudaStatus;
     }
 
-    //메모리 해제
-//Error:
-    //cudaFree(dev_c);
-    //cudaFree(dev_a);
+    cudaStatus = cudaMemcpy(
+        c,
+        dev_user_c,
+        size * sizeof(float),
+        cudaMemcpyDeviceToHost);
 
-    return cudaStatus;
+    if (cudaStatus != cudaSuccess)
+    {
+        fprintf(
+            stderr,
+            "user cudaMemcpy failed: %s\n",
+            cudaGetErrorString(cudaStatus));
+
+        userMemFreeWithCuda();
+
+        return cudaStatus;
+    }
+
+    return cudaSuccess;
 }
 
-int memFreeWithCuda()
+
+// ============================================================
+// User - GPU 메모리 해제
+// ============================================================
+
+int userMemFreeWithCuda()
 {
-    cudaFree(dev_c);
-    cudaFree(dev_a);
+    if (dev_user_c != nullptr)
+    {
+        cudaFree(dev_user_c);
+        dev_user_c = nullptr;
+    }
+
+    if (dev_user_a != nullptr)
+    {
+        cudaFree(dev_user_a);
+        dev_user_a = nullptr;
+    }
+
+    return 0;
+}
+
+
+// ============================================================
+// Movement - GPU 메모리 복사
+// ============================================================
+
+cudaError_t movementMemCopyWithCuda(
+    const float4* a,
+    unsigned int arraySize)
+{
+    cudaError_t cudaStatus;
+
+    cudaStatus = cudaMalloc(
+        (void**)&dev_movement_a,
+        arraySize * sizeof(float4));
+
+    if (cudaStatus != cudaSuccess)
+    {
+        fprintf(
+            stderr,
+            "cudaMalloc dev_movement_a failed\n");
+
+        return cudaStatus;
+    }
+
+    cudaStatus = cudaMemcpy(
+        dev_movement_a,
+        a,
+        arraySize * sizeof(float4),
+        cudaMemcpyHostToDevice);
+
+    if (cudaStatus != cudaSuccess)
+    {
+        fprintf(
+            stderr,
+            "cudaMemcpy dev_movement_a failed\n");
+
+        cudaFree(dev_movement_a);
+        dev_movement_a = nullptr;
+
+        return cudaStatus;
+    }
+
+    cudaStatus = cudaMalloc(
+        (void**)&dev_movement_c,
+        arraySize * sizeof(float));
+
+    if (cudaStatus != cudaSuccess)
+    {
+        fprintf(
+            stderr,
+            "cudaMalloc dev_movement_c failed\n");
+
+        cudaFree(dev_movement_a);
+        dev_movement_a = nullptr;
+
+        return cudaStatus;
+    }
+
+    return cudaSuccess;
+}
+
+
+// ============================================================
+// Movement - GPU 연산
+// ============================================================
+
+cudaError_t movementDisFilterWithCuda(
+    float* c,
+    const float4 start,
+    unsigned int size)
+{
+    unsigned int threadsPerBlock = 256;
+
+    unsigned int blocks =
+        (size + threadsPerBlock - 1)
+        / threadsPerBlock;
+
+    disFilterKernel << <blocks, threadsPerBlock >> > (
+        dev_movement_c,
+        start,
+        dev_movement_a,
+        size);
+
+    cudaError_t cudaStatus =
+        cudaGetLastError();
+
+    if (cudaStatus != cudaSuccess)
+    {
+        fprintf(
+            stderr,
+            "movement kernel launch failed: %s\n",
+            cudaGetErrorString(cudaStatus));
+
+        movementMemFreeWithCuda();
+
+        return cudaStatus;
+    }
+
+    cudaStatus =
+        cudaDeviceSynchronize();
+
+    if (cudaStatus != cudaSuccess)
+    {
+        fprintf(
+            stderr,
+            "movement cudaDeviceSynchronize failed: %s\n",
+            cudaGetErrorString(cudaStatus));
+
+        movementMemFreeWithCuda();
+
+        return cudaStatus;
+    }
+
+    cudaStatus = cudaMemcpy(
+        c,
+        dev_movement_c,
+        size * sizeof(float),
+        cudaMemcpyDeviceToHost);
+
+    if (cudaStatus != cudaSuccess)
+    {
+        fprintf(
+            stderr,
+            "movement cudaMemcpy failed: %s\n",
+            cudaGetErrorString(cudaStatus));
+
+        movementMemFreeWithCuda();
+
+        return cudaStatus;
+    }
+
+    return cudaSuccess;
+}
+
+
+// ============================================================
+// Movement - GPU 메모리 해제
+// ============================================================
+
+int movementMemFreeWithCuda()
+{
+    if (dev_movement_c != nullptr)
+    {
+        cudaFree(dev_movement_c);
+        dev_movement_c = nullptr;
+    }
+
+    if (dev_movement_a != nullptr)
+    {
+        cudaFree(dev_movement_a);
+        dev_movement_a = nullptr;
+    }
+
     return 0;
 }
 
