@@ -1,0 +1,6 @@
+0: { 1, 3, 3 } , { 1, 2, 5 } = { 2562 }
+1: { 1, 2, 6 } , { 1, 2, 5 } = { 1 }
+2: { 1, 2, 9 } , { 1, 2, 5 } = { 4 }
+3: { 1, 2, 12 } , { 1, 2, 5 } = { 7 }
+4: { 1, 2, 15 } , { 1, 2, 5 } = { 10 }
+[navigation] provider=packaged-navmesh, failClosed=False, detail=sha256=062923193afee3ca3b691a03977f90b0c3cc6515d65bdd7f2aefc2c333bae636, polygons=72836, portals=124671

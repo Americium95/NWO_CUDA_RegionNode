@@ -1,0 +1,1 @@
+<div class="ok"><b>좋은 소식.</b> 새 0x06 헤더도 <b>첫 바이트가 opcode</b>(<code>0x06</code>)이고, 기존 opcode(<code>0x02</code>/<code>0x04</code>)와 값이 겹치지 않는다. 따라서 <code>buffer[0]</code> peeking(<b>인덱스 미전진</b>)만으로 두 프로토콜을 <b>안전하게 판별</b>할 수 있다. 이전 설계처럼 "첫 4바이트 길이 프리픽스"를 쓰면 <code>buffer[0]</code> 판별이 불가능했던 문제도, 12바이트 자기경계 헤더로 바뀌면서 <b>해결된다</b>.</div>

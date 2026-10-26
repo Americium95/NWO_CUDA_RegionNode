@@ -1,0 +1,694 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>NWO RegionNode 서버 0x06/0x00 경로검증 구현 보고서</title>
+<style>
+  body { font-family: "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", sans-serif;
+         line-height: 1.65; margin: 0 auto; max-width: 1180px; padding: 28px 32px 72px;
+         color: #1d2327; background: #ffffff; }
+  h1 { font-size: 26px; border-bottom: 3px solid #1f4e79; padding-bottom: 8px; }
+  h2 { font-size: 20px; margin-top: 42px; border-left: 6px solid #1f4e79; padding-left: 10px; }
+  h3 { font-size: 16px; margin-top: 26px; color: #1f4e79; }
+  table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 14px; }
+  th, td { border: 1px solid #c9d2da; padding: 7px 9px; text-align: left; vertical-align: top; }
+  th { background: #eef3f8; }
+  pre { background: #f6f8fa; border: 1px solid #d8dee4; border-left: 4px solid #1f4e79;
+        padding: 12px 14px; overflow-x: auto; font-size: 13px; line-height: 1.5; }
+  code { font-family: Consolas, "D2Coding", monospace; }
+  .warn { background: #fff6e5; border: 1px solid #e0b070; padding: 10px 14px; }
+  .fail { background: #fdecec; border: 1px solid #d07070; padding: 10px 14px; }
+  .ok   { background: #eefaf0; border: 1px solid #77bb88; padding: 10px 14px; }
+  .file { font-family: Consolas, monospace; }
+  .small { font-size: 13px; color: #4a5560; }
+</style>
+</head>
+<body>
+
+<h1>NWO RegionNode 서버 0x06/0x00 경로검증 구현 보고서</h1>
+<p class="small">
+  대상 프로젝트: NWO_RegionNode (net6.0, DotNetty 0.7.2, TCP 19100)<br>
+  대상 파일: <span class="file">NWO_RegionNode/</span> 아래 서버 측 구현 일체<br>
+  문서 상태: 독립 리뷰 지적사항(프레이밍 부재, 방문점 순서 검증 취약, provider 비연동, 버퍼 소유권, 샘플링 방식, 보고서 미비)을 반영해 수정한 최종 구현 기준
+</p>
+
+<div class="fail">
+  <strong>현재 판정 요약:</strong> 0x06/0x00 요청은 <strong>파싱·거부 응답까지 동작</strong>하지만,
+  <strong>정답을 인정(Accepted)하는 경로는 아직 존재하지 않습니다.</strong>
+  권위 있는 NavMesh provider가 실제로 구성되지 않은 동안에는 모든 플랜이 거부(fail-closed)됩니다.
+  <strong>신뢰 구간(신뢰 경로 섹션)은 표본으로 추출되며 전체 경로 인접성을 결정론적으로 순회하지 않는다. 기본 표본 예산은 min(64, 세그먼트 수)개의 고유 에지이며, 표본에 포함되지 않은 세그먼트에는 확률적 갭/재시도 리스크가 존재한다.</strong>
+  3절과 8절을 반드시 함께 읽으십시오.
+</div>
+
+<h2>1. 처리 흐름 요약</h2>
+<p>
+  기존 서버는 프레임 디코더가 없는 raw TCP 핸들러(<span class="file">EchoServerHandler</span>)였고,
+  TCP read 1회 = 패킷 1개라는 암묵 가정에 의존했습니다. 새 요청 0x06/0x00은 헤더에
+  <code>totalPacketLength</code>를 광고하므로, 이 가정 위에서는 split/coalesced read가 곧바로 파싱 오류를 유발합니다.
+  이를 해결하기 위해 <strong>0x06에 한정해</strong> 스트림 누적/프레이밍 핸들러
+  (<span class="file">PathFrameDecoder</span>)를 실제 부트스트랩 파이프라인에 삽입했습니다.
+  레거시 0x02/0x04 패킷은 <strong>원본 버퍼를 그대로</strong> 후행 핸들러로 전달되므로 처리 방식이 바뀌지 않습니다.
+  단, 한 read 안에 레거시 패킷과 0x06 프레임이 <strong>섞여 들어온</strong> 경우에는 프레임 경계를 알 수 없으므로
+  해당 채널만 종료합니다(3.4절). 기존처럼 통째로 전달하면 뒤따른 0x06 요청이 조용히 유실되기 때문입니다.
+</p>
+
+<pre><code>pipeline.AddLast("pathframe", new PathFrameDecoder());   // 0x06 한정 누적/프레이밍
+pipeline.AddLast("echo",     new EchoServerHandler(pathProvider)); // 레거시 + 0x06 검증</code></pre>
+<p class="small">출처: <span class="file">NWO_RegionNode/Program.cs:461-462</span></p>
+
+<h2>2. 실제 와이어 레이아웃</h2>
+
+<h3>2.1 요청 0x06 / 0x00 (클라이언트 → 서버)</h3>
+<p>모든 정수 필드는 little-endian이며, 바이트열은 요청 길이 필드(<code>totalPacketLength</code>)가 advertising한 길이를 정확히 채워야 합니다.</p>
+<table>
+<tr><th>오프셋</th><th>크기</th><th>타입</th><th>필드</th><th>검증 규칙</th></tr>
+<tr><td>0</td><td>1</td><td>byte</td><td>opcode</td><td>0x06 고정</td></tr>
+<tr><td>1</td><td>1</td><td>byte</td><td>subtype</td><td>0x00 고정</td></tr>
+<tr><td>2</td><td>2</td><td>u16</td><td>protocolVersion</td><td>1이어야 함</td></tr>
+<tr><td>4</td><td>4</td><td>u32</td><td>totalPacketLength</td><td>12 ≤ L ≤ 1,048,576, 수신 누적 바이트 ≥ L</td></tr>
+<tr><td>8</td><td>4</td><td>u32</td><td>requestId</td><td>응답에 그대로 회송</td></tr>
+<tr><td>12</td><td>8</td><td>u64</td><td>planSequence</td><td>0 불가</td></tr>
+<tr><td>20</td><td>2</td><td>u16</td><td>navMeshVersionByteLength</td><td>1 ≤ n ≤ 128</td></tr>
+<tr><td>22</td><td>n</td><td>UTF-8</td><td>navMeshVersion</td><td>provider 버전과 정확히 동일해야 함</td></tr>
+<tr><td>22+n</td><td>4</td><td>i32</td><td>startPolygonIndex</td><td>경로[0]과 동일</td></tr>
+<tr><td>26+n</td><td>4</td><td>i32</td><td>destinationPolygonIndex</td><td>경로[last]와 동일</td></tr>
+<tr><td>30+n</td><td>2</td><td>u16</td><td>visitCount</td><td>0 ≤ v ≤ 256</td></tr>
+<tr><td>32+n …</td><td>반복</td><td>—</td><td>visit entry</td><td>visitIdByteLength u16 (0 ≤ 64), visitId UTF-8, polygonIndex i32, order u16</td></tr>
+<tr><td>—</td><td>4</td><td>u32</td><td>pathPolygonCount</td><td>2 ≤ c ≤ 4096</td></tr>
+<tr><td>—</td><td>4×c</td><td>i32[]</td><td>pathPolygonIndices</td><td>경로 폴리곤 인덱스</td></tr>
+<tr><td>—</td><td>8</td><td>u64</td><td>clientComputedAtUtcMs</td><td>0 불가</td></tr>
+</table>
+
+<h3>2.2 응답 0x06 / 0x01 (서버 → 클라이언트)</h3>
+<table>
+<tr><th>오프셋</th><th>크기</th><th>타입</th><th>필드</th></tr>
+<tr><td>0</td><td>1</td><td>byte</td><td>opcode 0x06</td></tr>
+<tr><td>1</td><td>1</td><td>byte</td><td>subtype 0x01</td></tr>
+<tr><td>2</td><td>2</td><td>u16</td><td>protocolVersion = 1</td></tr>
+<tr><td>4</td><td>4</td><td>u32</td><td>totalPacketLength (헤더 포함, 실제 인코딩된 값)</td></tr>
+<tr><td>8</td><td>4</td><td>u32</td><td>requestId (요청 헤더 오프셋 8에서 회송. 0x06/0x00 헤더 12바이트를 읽지 못한 경우에만 0)</td></tr>
+<tr><td>12</td><td>8</td><td>u64</td><td>planSequence (거부 응답은 0)</td></tr>
+<tr><td>20</td><td>1</td><td>u8</td><td>decision (0=Accepted, 1=Rejected, 2=Limited, 3=ResyncRequired)</td></tr>
+<tr><td>21</td><td>2</td><td>u16</td><td>reasonCode</td></tr>
+<tr><td>23</td><td>2</td><td>u16</td><td>serverPlanIdByteLength (≤ 64)</td></tr>
+<tr><td>25</td><td>m</td><td>UTF-8</td><td>serverPlanId ("sp1_" + 24 hex, 거부 시 빈 문자열)</td></tr>
+<tr><td>25+m</td><td>4</td><td>u32</td><td>sampledSegments</td></tr>
+<tr><td>29+m</td><td>4</td><td>u32</td><td>totalSegments</td></tr>
+</table>
+<p class="small">응답 총 길이는 <code>12 + 21 + serverPlanId길이</code>로 계산되며, 생성되는 serverPlanId는 28바이트라 정상 응답은 61바이트입니다.</p>
+
+<h3>2.3 reasonCode</h3>
+<p class="small">
+  VALID=0, INVALID_REQUEST=1, RATE_LIMITED=2, STALE_SEQUENCE=3, START_MISMATCH=4, RESYNC_REQUIRED=5,
+  PLAN_INVALID=6, PATH_DISCONTINUITY=7, OFF_MESH_SAMPLE=8, FORBIDDEN_REGION=9, VISIT_UNREACHED=10, VISIT_ORDER_MISMATCH=11<br>
+  출처: <span class="file">NWO_RegionNode/PathPolygonIndexRequest.cs:40-54</span>
+</p>
+
+<h2>3. 스트림 프레이밍 (<span class="file">PathFrameDecoder.cs</span>)</h2>
+
+<h3>3.1 왜 필요한가</h3>
+<p>
+  DotNetty 소켓 파이프라인은 read 경계를 보존하지 않습니다. 한 번의 <code>ChannelRead</code>에 0x06 프레임이
+  절반만 도착하거나, 프레임 2개 + 레거시 패킷이 함께 도착할 수 있습니다.
+  기존 <span class="file">EchoServerHandler</span>는 <code>buffer.GetByte(0..N)</code>으로 한 패킷을 통째로 가정하므로,
+  0x06에 대해 이 가정을 그대로 쓰면 조각난 프레임을 잘못 해석하거나 예외로 채널이 닫혔습니다.
+</p>
+
+<h3>3.2 처리 규칙</h3>
+<table>
+<tr><th>조건</th><th>동작</th><th>레거시 영향</th></tr>
+<tr><td>메시지가 IByteBuffer가 아님 또는 ReadableBytes ≤ 0</td><td>즉시 해제 후 폐기</td><td>없음 (기존에도 무시)</td></tr>
+<tr><td>진행 중인 0x06 프레임이 있음(<code>_pendingCount &gt; 0</code>)</td><td>다음 바이트를 <strong>무조건</strong> 누적 배열에 추가(프레임이 선언된 길이를 채울 때까지)</td><td>레거시 바이트가 프레임 시작 위치에 도달하면 아래 "인터리빙" 행에서 채널 종료. 유효 헤더 <em>뒤</em>에 도달하면 payload로 간주되어 누적됨(3.4절 참조)</td></tr>
+<tr><td>누적 중 프레임 시작 위치의 바이트가 0x06이 아님(<strong>레거시 인터리빙</strong>)</td><td>로그 후 해당 채널 종료(fail-closed)</td><td>레거시 패킷은 처리되지 않고 채널이 닫힘 — 프레임 유실 대신 확정적 실패</td></tr>
+<tr><td>첫 바이트가 0x06</td><td>읽기 가능한 바이트를 누적 배열에 복사 후 <strong>입력 버퍼를 1회 해제</strong></td><td>0x02/0x04 패킷은 첫 바이트가 0x02/0x04이므로 절대 누적 대상이 되지 않음</td></tr>
+<tr><td>누적 바이트 첫 바이트가 0x06이고 선언 길이까지 <strong>모였음</strong></td><td>프레임을 잘라 후행 전달하고, 남은 꼬리(레거시 포함)를 다음 반복에서 계속 처리</td><td>프레임 뒤 레거시 꼬리는 지연 없이 전달됨(복사 1회 추가)</td></tr>
+<tr><td>첫 바이트가 0x06이 아니고, 버퍼 어딘가에 <strong>완전한 0x06/0x00 헤더</strong>(8바이트, 유효 길이)가 있음</td><td>로그 후 해당 채널 종료(fail-closed) — <strong>legacy-first coalesced 거부</strong></td><td>레거시 패킷도 처리되지 않고 채널이 닫힘 — 0x06 요청의 조용한 유실 방지</td></tr>
+<tr><td>첫 바이트가 0x06이 아니고, 완전한 0x06 헤더가 없음</td><td><strong>원본 버퍼를 그대로</strong> 후행 핸들러로 전달(소유권 이전, 복사 없음)</td><td>없음 — 기존과 바이트 단위로 동일</td></tr>
+<tr><td>0x06 이지만 subtype ≠ 0x00</td><td>로그 후 해당 채널 종료(fail-closed)</td><td>없음 (레거시 opcode는 0x02/0x04)</td></tr>
+<tr><td>length 필드가 12 미만이거나 1,048,576 초과</td><td>로그 후 해당 채널 종료(fail-closed)</td><td>없음 (동일)</td></tr>
+<tr><td>누적 바이트 &gt; 1,048,576</td><td>로그 후 해당 채널 종료</td><td>없음 (동일)</td></tr>
+<tr><td>선언 길이보다 누적 바이트가 적음</td><td>다음 read를 기다림(break 후 컴팩트)</td><td>해당 채널의 부분 프레임만 보류</td></tr>
+</table>
+<p class="small">
+  위 표의 "완전한 0x06/0x00 헤더" 판정은 <code>ContainsPathFrameHeader</code>가 수행합니다.
+  레거시 시작 read에서 opcode 0x06 + subtype 0x00 + <code>totalPacketLength</code> ∈ [12, 1048576]인 8바이트 패턴을 찾으면 혼합으로 간주합니다.
+  헤더가 8바이트 미만으로만 존재하는 경우는 길이 필드를 신뢰할 수 없어 <strong>레거시로 원본 전달</strong>(기존 동작 유지)을 선택합니다.
+</p>
+
+<h3>3.3 실제 코드</h3>
+<p class="small">출처: <span class="file">NWO_RegionNode/PathFrameDecoder.cs:23-95</span></p>
+<pre><code>public override void ChannelRead(IChannelHandlerContext context, object message)
+{
+    var buffer = message as IByteBuffer;
+    if (buffer == null || buffer.ReadableBytes &lt;= 0)
+    {
+        ReferenceCountUtil.SafeRelease(message);
+        return;
+    }
+
+    // A 0x06 frame is already in flight. Every following byte belongs to that
+    // frame until the advertised length is satisfied, so it is accumulated
+    // unconditionally. Any non-0x06 byte seen by Drain is an unsupported
+    // interleave and terminates the channel (see Drain).
+    if (_pendingCount &gt; 0)
+    {
+        Append(buffer);
+        ReferenceCountUtil.SafeRelease(buffer);
+
+        if (_pendingCount &gt; MAX_FRAME_LENGTH)
+        {
+            Console.WriteLine("[path] 0x06 accumulation overflow, channel closed");
+            _pendingCount = 0;
+            context.CloseAsync();
+            return;
+        }
+
+        Drain(context);
+        return;
+    }
+
+    // No frame in flight. A read that starts with 0x06 begins a 0x06 stream.
+    if (buffer.GetByte(buffer.ReaderIndex) == PATH_OPCODE)
+    {
+        Append(buffer);
+        ReferenceCountUtil.SafeRelease(buffer);
+
+        if (_pendingCount &gt; MAX_FRAME_LENGTH)
+        {
+            Console.WriteLine("[path] 0x06 accumulation overflow, channel closed");
+            _pendingCount = 0;
+            context.CloseAsync();
+            return;
+        }
+
+        Drain(context);
+        return;
+    }
+
+    // The read starts with a legacy 0x02/0x04 packet. Legacy packets carry no
+    // length field, so this decoder cannot tell where that packet ends and
+    // therefore cannot split a trailing coalesced 0x06 frame off it without
+    // risking an offset misread of the legacy payload.
+    //
+    // Rather than forwarding the whole buffer and silently discarding the
+    // trailing 0x06 request, an unframeable mix is rejected deterministically:
+    // the channel is closed so nothing is lost quietly.
+    if (ContainsPathFrameHeader(buffer))
+    {
+        Console.WriteLine("[path] legacy packet coalesced with 0x06 frame, channel closed");
+        ReferenceCountUtil.SafeRelease(buffer);
+        context.CloseAsync();
+        return;
+    }
+
+    // Pure legacy read: forward the original buffer untouched.
+    context.FireChannelRead(buffer);
+}</code></pre>
+
+<p class="small">출처: <span class="file">NWO_RegionNode/PathFrameDecoder.cs:132-190</span> (프레임 추출 루프)</p>
+<pre><code>private void Drain(IChannelHandlerContext context)
+{
+    int offset = 0;
+    while (_pendingCount - offset &gt; 0)
+    {
+        // A 0x06 frame was declared in flight but this byte is not 0x06:
+        // legacy bytes were interleaved into the middle of a frame. The
+        // declared length can no longer be trusted, so no safe split exists.
+        // Fail closed instead of guessing and losing a frame.
+        if (_pending[offset] != PATH_OPCODE)
+        {
+            Console.WriteLine("[path] legacy bytes interleaved into 0x06 frame, channel closed");
+            _pendingCount = 0;
+            context.CloseAsync();
+            return;
+        }
+
+        if (_pendingCount - offset &lt; 2)
+        {
+            break;
+        }
+
+        if (_pending[offset + 1] != PATH_REQUEST_SUBTYPE)
+        {
+            Console.WriteLine("[path] unsupported 0x06 subtype, channel closed");
+            _pendingCount = 0;
+            context.CloseAsync();
+            return;
+        }
+
+        if (_pendingCount - offset &lt; LENGTH_FIELD_END)
+        {
+            break;
+        }
+
+        uint total = ReadLength(_pending, offset);
+        if (total &lt; MIN_FRAME_LENGTH || total &gt; MAX_FRAME_LENGTH)
+        {
+            Console.WriteLine($"[path] invalid 0x06 frame length {total}, channel closed");
+            _pendingCount = 0;
+            context.CloseAsync();
+            return;
+        }
+
+        if (_pendingCount - offset &lt; (int)total)
+        {
+            break;
+        }
+
+        var frame = new byte[total];
+        Buffer.BlockCopy(_pending, offset, frame, 0, (int)total);
+        offset += (int)total;
+        context.FireChannelRead(Unpooled.CopiedBuffer(frame));
+    }
+
+    Compact(offset);
+}</code></pre>
+
+<p class="small">출처: <span class="file">NWO_RegionNode/PathFrameDecoder.cs:192-217</span> (레거시 read 안의 0x06 헤더 탐지)</p>
+<pre><code>private static bool ContainsPathFrameHeader(IByteBuffer buffer)
+{
+    int start = buffer.ReaderIndex;
+    int readable = buffer.ReadableBytes;
+    for (int i = 0; i + LENGTH_FIELD_END &lt;= readable; i++)
+    {
+        int pos = start + i;
+        if (buffer.GetByte(pos) != PATH_OPCODE
+            || buffer.GetByte(pos + 1) != PATH_REQUEST_SUBTYPE)
+        {
+            continue;
+        }
+
+        uint total = (uint)(buffer.GetByte(pos + 4)
+            | (buffer.GetByte(pos + 5) &lt;&lt; 8)
+            | (buffer.GetByte(pos + 6) &lt;&lt; 16)
+            | (buffer.GetByte(pos + 7) &lt;&lt; 24));
+
+        if (total &gt;= MIN_FRAME_LENGTH &amp;&amp; total &lt;= MAX_FRAME_LENGTH)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}</code></pre>
+
+<h3>3.4 설계 상 정확히 지원되는 범위 / 지원하지 않는 범위</h3>
+<div class="ok">
+  <strong>지원 (0x06 한정)</strong><br>
+  · 0x06/0x00 프레임이 여러 TCP read에 걸쳐 <strong>나누어 도착</strong>하는 경우 — 길이 필드가 광고한 L 바이트가 모일 때까지 누적 후 처리.<br>
+  · 0x06/0x00 프레임 <strong>여러 개가 한 read에 함께 도착</strong>하는 경우 — 루프가 순서대로 잘라 각각 검증·응답.<br>
+  · 0x06/0x00 프레임 뒤에 레거시 패킷이 같은 read에 이어지는 경우 — 프레임을 꺼낸 뒤 꼬리를 즉시 후행 전달.
+</div>
+<div class="fail">
+  <strong>지원하지 않음 — 의도적으로 채널 종료(fail-closed)하여 거부</strong><br>
+  아래 두 혼합 시퀀스는 <strong>레거시 패킷에 길이 필드가 없어 프레임 경계를 알 수 없으므로</strong> 안전하게 분리할 수 없습니다.
+  이전 구현처럼 통째로 레거시로 전달하면 뒤따른 0x06 요청이 <strong>조용히 유실</strong>되므로,
+  대신 <strong>해당 채널만 즉시 종료</strong>하여 어떤 프레임도 조용히 버려지지 않게 하는 쪽을 택했습니다.
+  <table>
+    <tr><th>혼합 시퀀스</th><th>판정</th><th>사유</th></tr>
+    <tr>
+      <td>레거시 0x02/0x04 패킷 뒤에 <strong>완전한</strong> 0x06/0x00 프레임이 같은 read에 이어짐 (legacy-first coalesced)</td>
+      <td><strong>채널 종료</strong><br><code>[path] legacy packet coalesced with 0x06 frame, channel closed</code></td>
+      <td>레거시 패킷에 길이 필드가 없어 어디서 0x06 프레임이 시작되는지 확정할 수 없습니다. 길이를 신뢰하고 잘라내면 레거시 페이로드를 오프셋 오독합니다.</td>
+    </tr>
+    <tr>
+      <td>부분 0x06 프레임 진행 중 동일 채널로 레거시 바이트가 인터리빙 — <strong>프레임 시작 위치</strong>에 도달한 경우</td>
+      <td><strong>채널 종료</strong><br><code>[path] legacy bytes interleaved into 0x06 frame, channel closed</code></td>
+      <td>프레임이 이미 시작된 뒤 길이 필드 경계가 무너집니다. 재동기화하면 0x06 프레임 또는 레거시 패킷 중 하나를 반드시 잃습니다.</td>
+    </tr>
+    <tr>
+      <td>부분 0x06 프레임 진행 중 레거시 바이트가 <strong>완전한 유효 헤더 뒤(프레임 payload 내부)</strong>에 도달한 경우</td>
+      <td><strong>프레이밍 계층에서 감지 불가</strong> — 바이트를 프레임 payload로 간주해 누적</td>
+      <td>헤더가 이미 통과한 뒤에는 남은 L 바이트가 "프레임 payload"인지 "레거시 패킷"인지 바이트 값만으로 구별할 수 없습니다. 이 경우 <code>Drain</code>의 루프가 종료되지 않으므로 <strong>채널은 열려 있으나</strong> 오염된 프레임이 <code>PathPacketHandler</code>의 필드 검증에서 거부(Rejected)됩니다. 클라이언트가 0x06 프레임 도중 레거시 패킷을 끼워 넣으면 응답이 오지 않으므로, 규약상 0x06 프레임은 연속으로만 송신해야 합니다.</td>
+    </tr>
+    <tr>
+      <td>레거시 read 안에 0x06/0x00 + 유효 길이 헤더가 존재 (헤더 8바이트 완비)</td>
+      <td><strong>채널 종료</strong> (위 1행과 동일)</td>
+      <td>레거시 시작 read에 0x06 헤더가 보이면 혼합으로 간주합니다. 레거시 payload의 임의 바이트가 우연히 0x06/0x00 패턴을 만들 확률은 극히 낮습니다.</td>
+    </tr>
+    <tr>
+      <td>레거시 read 끝에 0x06 헤더가 <strong>8바이트 미만</strong>으로만 존재</td>
+      <td><strong>레거시로 원본 전달</strong> (기존 동작 유지)</td>
+      <td>길이 필드가 불완전해 경계를 확정할 수 없고, 단독 0x06 바이트는 정상 레거시 payload에도 나타날 수 있어 오탐 비용이 큽니다. 이 드문 경계는 기존 레거시 의미론을 우선했습니다.</td>
+    </tr>
+    <tr>
+      <td>길이 필드가 손상된 0x06 스트림 (범위 밖)</td>
+      <td><strong>채널 종료</strong> (재동기화 없음)</td>
+      <td>프레임 경계를 신뢰할 수 없는 상태에서 재동기화하면 레거시 패킷을 오프셋 오독하므로 확정적인 실패를 택했습니다.</td>
+    </tr>
+  </table>
+  <strong>레거시 의미론 보존:</strong> 0x06 헤더가 전혀 없는 순수 레거시 read는 <strong>원본 버퍼를 그대로</strong> 후행 전달합니다(복사 없음, 바이트 단위 동일).
+  레거시 패킷 자체의 split/coalesced 대응은 여전히 범위 밖이며, 한 read에 레거시 패킷 2개가 오면 첫 패킷만 처리되고 나머지는 버려집니다(기존 동작 그대로).
+</div>
+
+<h2>4. 소스 파일 역할</h2>
+<table>
+<tr><th>파일</th><th>역할</th><th>이번 변경분</th></tr>
+<tr><td class="file">PathFrameDecoder.cs</td><td>0x06 한정 스트림 누적/프레이밍 핸들러</td><td>신규 추가 (채널당 1개 인스턴스)</td></tr>
+<tr><td class="file">EchoServerHandler.cs</td><td>레거시 0x02/0x04 처리 + 0x06 검증 디스패치, 버퍼 소유권</td><td>provider 주입 생성자, 진입부 try/finally + 단일 해제</td></tr>
+<tr><td class="file">PathPacketHandler.cs</td><td>0x06/0x00 진입 판정, 길이 사전 검증, 거부 응답 인코딩/전송</td><td>미사용 필드 제거, 응답 경로 단일화</td></tr>
+<tr><td class="file">PathPolygonDecoder.cs</td><td>경계 엄격 디코더(<code>pos == bodyEnd</code>), 응답 인코더</td><td>변경 없음 (기존 그대로)</td></tr>
+<tr><td class="file">PathPolygonIndexRequest.cs</td><td>요청/응답 DTO, reasonCode/decision 열거형, provider 인터페이스와 기본(거부) 구현</td><td><code>DefaultNavMeshProvider</code>에 버전 지정 생성자 추가</td></tr>
+<tr><td class="file">PathValidator.cs</td><td>검증 순서, 방문점 순서 검증, 기하 샘플링</td><td>순서 부분수열 검증, CSPRNG 비중복 샘플링, fail-closed 정규화</td></tr>
+<tr><td class="file">NavMeshProviderFactory.cs</td><td>기동 시점 provider 해석(설정 파일 → provider)</td><td>신규 추가</td></tr>
+<tr><td class="file">Program.cs</td><td>부트스트랩 및 파이프라인 구성 (19100)</td><td>프레이밍 핸들러 삽입, provider 해석 후 주입</td></tr>
+</table>
+
+<h2>5. 검증 순서 (전부 기하 샘플링 이전에 수행됨)</h2>
+<p class="small">출처: <span class="file">NWO_RegionNode/PathValidator.cs:19-109</span>의 <code>PathValidator.Validate</code> 순서 그대로입니다.</p>
+<table>
+<tr><th>#</th><th>단계</th><th>실패 시 decision / reasonCode</th><th>코드 위치</th></tr>
+<tr><td>1</td><td>navMeshVersion이 provider 버전과 정확히 일치하는가</td><td>ResyncRequired / RESYNC_REQUIRED(5)</td><td>PathValidator.cs:29-36</td></tr>
+<tr><td>2</td><td>경로 폴리곤 개수가 2 ~ 4096인가</td><td>Rejected / PLAN_INVALID(6)</td><td>PathValidator.cs:38-43</td></tr>
+<tr><td>3</td><td>시작/도착 폴리곤이 provider에 존재하는가</td><td>Rejected / PLAN_INVALID(6)</td><td>PathValidator.cs:45-50</td></tr>
+<tr><td>4</td><td>경로 배열 길이가 선언된 개수와 일치하는가</td><td>Rejected / INVALID_REQUEST(1)</td><td>PathValidator.cs:52-58</td></tr>
+<tr><td>5</td><td><strong>경로 전체</strong>의 모든 폴리곤이 존재하고 NavMesh 위에 있는가</td><td>Rejected / PLAN_INVALID(6)</td><td>PathValidator.cs:60-68</td></tr>
+<tr><td>6</td><td>경로[0] == 시작, 경로[last] == 도착인가</td><td>Rejected / PLAN_INVALID(6)</td><td>PathValidator.cs:70-75</td></tr>
+<tr><td>7</td><td>방문점 order == 방문 인덱스(중복·역순·누락 차단)</td><td>Rejected / VISIT_ORDER_MISMATCH(11)</td><td>PathValidator.cs:115-121</td></tr>
+<tr><td>8</td><td>방문 폴리곤이 provider에 존재하는가</td><td>Rejected / VISIT_UNREACHED(10)</td><td>PathValidator.cs:123-130</td></tr>
+<tr><td>9</td><td>방문점들이 <strong>제출된 통로 안에서 order 순 부분수열</strong>을 이루는가</td><td>Rejected / VISIT_ORDER_MISMATCH(11)</td><td>PathValidator.cs:132-149</td></tr>
+<tr><td>10</td><td>기하/인접 샘플링 (비중복 최대 64개 구간, CanMoveBetween + ValidateGeometry 동시 검사)</td><td>Rejected / provider 사유(없으면 FORBIDDEN_REGION)</td><td>PathValidator.cs:96-103</td></tr>
+<tr><td>11</td><td>위 전부를 통과</td><td>Accepted / VALID(0)</td><td>PathValidator.cs:106-108</td></tr>
+</table>
+<p>
+  5~6번은 <strong>무작위성 없이 전체 통로를 결정론적으로 검사</strong>하며, 10번(기하/인접 샘플링)보다 반드시 먼저 수행됩니다.
+  즉, 확률적 단계는 마지막에만 동작하고 그 이전 단계는 표본에 의존하지 않습니다.
+  <strong>신뢰 구간은 표본으로 추출되며(최대 64개 고유 세그먼트), 전체 경로 인접성을 결정론적으로 순회하지 않는다. 표본에 포함되지 않은 세그먼트에는 확률적 갭/재시도 리스크가 존재한다.</strong>
+</p>
+
+<h2>6. 방문점(visit) 검증</h2>
+<p>
+  리뷰 지적 "visit가 통로에 존재하는지 확인하지 않음 / order만 비교"을 반영했습니다.
+  이제 <strong>(a) order 값이 0부터 연속된 방문 인덱스와 정확히 같아야 하고</strong>,
+  <strong>(b) 각 방문 폴리곤이 provider에 존재하며</strong>,
+  <strong>(c) 방문점들이 제출된 통로 위에서 order 순서의 단조 증가 부분수열이어야 합니다.</strong>
+  커서는 앞으로만 전진하므로 O(경로길이 + 방문수)이고, 통로에 존재하지 않거나 뒤로 되돌아가야만 가능한 방문은 거부됩니다.
+</p>
+<pre><code>private bool ValidateVisits(List&lt;VisitEntry&gt; visits, int[] path, PathValidationResult res)
+{
+    int cursor = 0;
+    for (int i = 0; i &lt; visits.Count; i++)
+    {
+        VisitEntry v = visits[i];
+        if (v.Order != i)
+        {
+            res.Decision = (byte)PathDecision.Rejected;
+            res.ReasonCode = (ushort)PathReasonCode.VISIT_ORDER_MISMATCH;
+            return false;
+        }
+
+        if (!_provider.HasPolygon(v.PolygonIndex))
+        {
+            res.Decision = (byte)PathDecision.Rejected;
+            res.ReasonCode = (ushort)PathReasonCode.VISIT_UNREACHED;
+            return false;
+        }
+
+        bool reached = false;
+        while (cursor &lt; path.Length)
+        {
+            if (path[cursor] == v.PolygonIndex)
+            {
+                cursor++;
+                reached = true;
+                break;
+            }
+            cursor++;
+        }
+
+        if (!reached)
+        {
+            res.Decision = (byte)PathDecision.Rejected;
+            res.ReasonCode = (ushort)PathReasonCode.VISIT_ORDER_MISMATCH;
+            return false;
+        }
+    }
+    return true;
+}</code></pre>
+<p class="small">출처: <span class="file">NWO_RegionNode/PathValidator.cs:111-150</span></p>
+<table>
+<tr><th>클라이언트가 보낸 상황</th><th>판정</th></tr>
+<tr><td>order = 0,1,2,… (연속 증가)이며 통로에 그 순서로 등장</td><td>이 단계 통과</td></tr>
+<tr><td>order에 중복 값 (예: 0,0,1)</td><td>VISIT_ORDER_MISMATCH</td></tr>
+<tr><td>order가 역순 또는 건너뜀 (예: 0,2,3)</td><td>VISIT_ORDER_MISMATCH</td></tr>
+<tr><td>order 값이 ushort 범위를 벗어남(예: 65535)</td><td>VISIT_ORDER_MISMATCH</td></tr>
+<tr><td>방문 폴리곤이 통로에 아예 없음</td><td>VISIT_ORDER_MISMATCH (부분수열 미달)</td></tr>
+<tr><td>방문 폴리곤이 통로에는 있으나 뒤쪽 위치라 순서가 뒤집힘</td><td>VISIT_ORDER_MISMATCH</td></tr>
+<tr><td>방문 폴리곤을 provider가 모름</td><td>VISIT_UNREACHED</td></tr>
+<tr><td>통로에 같은 폴리곤이 여러 번 등장(루프)하고 방문 순서가 증가</td><td>이 단계 통과 (부분수열 존재)</td></tr>
+</table>
+
+<h2>7. 기하 샘플링</h2>
+<p>
+  리뷰 지적 "중복 샘플링 가능 + 비암호화 난수"를 반영했습니다.
+  <code>System.Random</code>을 버리고 <code>RandomNumberGenerator.GetInt32</code>(CSPRNG)를 직접 사용하며,
+  부분 Fisher–Yates 셔플로 <strong>중복 없이</strong> 최대 64개 구간을 선택합니다.
+  구간 수가 64개보다 적으면 <code>min(64, 구간수)</code>개를 전부 검사합니다.
+  <strong>인접성(CanMoveBetween)과 기하(ValidateGeometry) 검사는 각 표본 세그먼트에 대해 한 루프에서 함께 수행되며, 전체 경로를 결정론적으로 순회하지 않습니다.</strong>
+  신뢰 구간(신뢰 경로 섹션)은 표본으로 추출되며, 표본에 포함되지 않은 세그먼트에는 <b>확률적 갭/재시도 리스크</b>가 존재합니다.
+  어떤 프로브 하나라도 실패하면 즉시 fail-closed로 거부하며, provider가 <code>false</code>를 반환하면서
+  사유를 <code>VALID</code>로 준(이상한) 경우에도 <code>FORBIDDEN_REGION</code>으로 정규화해 거절합니다.
+</p>
+<pre><code>private bool ProbeSampledSegments(int[] path, int sampleCount, out PathReasonCode reason)
+{
+    reason = PathReasonCode.VALID;
+
+    int segmentCount = path.Length - 1;
+    var order = new int[segmentCount];
+    for (int i = 0; i < segmentCount; i++)
+    {
+        order[i] = i;
+    }
+
+    for (int i = 0; i < sampleCount; i++)
+    {
+        int j = i + RandomNumberGenerator.GetInt32(segmentCount - i);
+        int swap = order[i];
+        order[i] = order[j];
+        order[j] = swap;
+    }
+
+    for (int i = 0; i < sampleCount; i++)
+    {
+        int segment = order[i];
+        int from = path[segment];
+        int to = path[segment + 1];
+        if (!_provider.CanMoveBetween(from, to))
+        {
+            reason = PathReasonCode.PATH_DISCONTINUITY;
+            return false;
+        }
+        if (!_provider.ValidateGeometry(new int[] { from, to }, out _, out _, out PathReasonCode providerReason))
+        {
+            reason = providerReason == PathReasonCode.VALID
+                ? PathReasonCode.FORBIDDEN_REGION
+                : providerReason;
+            return false;
+        }
+    }
+
+    return true;
+}</code></pre>
+<p class="small">출처: <span class="file">NWO_RegionNode/PathValidator.cs:153-187</span>. 선택 개수 결정: <span class="file">PathValidator.cs:92-97</span></p>
+<div class="warn">
+  <strong>fail-closed 보장:</strong> 11번 이후로 Accepted를 반환하는 경로는 "모든 샘플 프로브 성공" 단 하나뿐이며,
+  프로브 실패 시 <code>sampledSegments</code> 값과 무관하게 반드시 Rejected로 빠집니다.
+  경로에 구간이 0개(폴리곤 1개)인 경우는 단계 2에서 이미 <code>PLAN_INVALID</code>로 차단됩니다.
+</div>
+
+<h2>8. Provider 연동과 fail-closed 한계</h2>
+
+<h3>8.1 실제로 동작하는 연동 지점</h3>
+<p>
+  provider 선택은 부팅 시점(<span class="file">Program.RunServerAsync</span>)에서 수행되며,
+  해석된 인스턴스가 채널 파이프라인에 주입됩니다. 즉 "설정만 있고 배선은 없는" 상태가 아닙니다.
+</p>
+<pre><code>NavMeshProviderResolution pathResolution = NavMeshProviderFactory.Resolve(AppContext.BaseDirectory);
+IAuthoritativeNavMeshProvider pathProvider = pathResolution.Provider;
+Console.WriteLine($"[path] provider source={pathResolution.Source} failClosed={pathResolution.FailClosed} detail={pathResolution.Detail}");
+...
+pipeline.AddLast("pathframe", new PathFrameDecoder());
+pipeline.AddLast("echo", new EchoServerHandler(pathProvider));</code></pre>
+<p class="small">출처: <span class="file">NWO_RegionNode/Program.cs:448-462</span></p>
+
+<h3>8.2 설정 파일</h3>
+<p>
+  실행 파일 기준 디렉터리의 <code>path_validation.json</code>을 읽습니다
+  (<span class="file">NWO_RegionNode/NavMeshProviderFactory.cs:20-66</span>). 현재 구현이 인식하는 값은 <code>deny-all</code> 한 가지이며,
+  <code>navMeshVersion</code> 문자열은 provider 버전 비교(단계 1)에 사용됩니다.
+</p>
+<pre><code>{
+  "providerKind": "deny-all",
+  "navMeshVersion": "s3-local-0"
+}</code></pre>
+<table>
+<tr><th>상황</th><th>결과</th></tr>
+<tr><td>파일 없음 / 읽기 실패 / JSON 파싱 실패 / 미구현 providerKind</td><td><code>DefaultNavMeshProvider("stub-0")</code>로 폴백 + 기동 로그 경고, 모든 플랜 거부</td></tr>
+<tr><td><code>providerKind = "deny-all"</code></td><td>지정된 버전 문자열을 가진 <code>DefaultNavMeshProvider</code>, 모든 플랜 거부</td></tr>
+</table>
+
+<h3>8.3 반드시 이해해야 할 한계</h3>
+<div class="fail">
+  <strong>지금 이 서버는 플랜을 받아들일 수 없습니다.</strong><br>
+  <code>DefaultNavMeshProvider</code>는 <code>HasPolygon</code>, <code>CanMoveBetween</code>,
+  <code>IsOnNavMesh</code>가 모두 <code>false</code>를 반환하고 <code>ValidateGeometry</code>는 항상 <code>false</code>를 반환합니다.
+  따라서 도달 가능한 최종 결과는 <strong>Rejected</strong>(PLAN_INVALID / VISIT_* / FORBIDDEN_REGION) 또는
+  버전 불일치 시 <strong>ResyncRequired</strong>뿐이며, <strong>Accepted는 절대 나오지 않습니다.</strong><br>
+  실제로 폴리곤 인덱스 범위, 인접 관계, 허용/금지 영역, 오프메시 판정을 가진 권위 있는 provider 구현은
+  <strong>아직 존재하지 않습니다.</strong> Accepted 경로를 열려면 그 구현(<code>IAuthoritativeNavMeshProvider</code> 5개 멤버)을
+ 팩토리 수준에서 추가하고 <code>providerKind</code> 분기를 늘려야 합니다.<br>
+  주입 경계는 좁게 유지했습니다: <code>PathValidator(IAuthoritativeNavMeshProvider)</code> /
+  <code>PathPacketHandler(IAuthoritativeNavMeshProvider)</code> / <code>EchoServerHandler(IAuthoritativeNavMeshProvider)</code> /
+  <code>NavMeshProviderFactory.Resolve</code> 네 곳이며, 다른 모든 코드는 인터페이스에만 의존합니다.
+</div>
+<p class="small">
+  참고: provider가 <code>null</code>로 주입되면 <code>PathValidator</code> 생성자가 즉시
+  <code>DefaultNavMeshProvider</code>로 대체하므로(<span class="file">PathValidator.cs:14-17</span>) fail-closed가 깨질 경로가 없습니다.
+</p>
+
+<h2>9. IByteBuffer 소유권 (요약)</h2>
+<p>
+  DotNetty 0.7.2의 파이프라인은 <code>ChannelHandlerAdapter.ChannelRead</code>를 오버라이드한 핸들러가
+  <code>ctx.FireChannelRead</code>를 호출하지 않으면 <strong>그 핸들러가 마지막 소비자가 되며</strong>,
+  파이프라인 꼬리(tail)는 해당 메시지를 보지 않습니다. 즉 핸들러 쪽에서 해제하는 것이 유일한 정상 경로입니다.
+</p>
+<table>
+<tr><th>경로</th><th>소유권 이전</th><th>해제 지점(정확히 1회)</th></tr>
+<tr><td>0x06 프레임 수신 → 누적</td><td>프레이밍 핸들러가 즉시 복사 후 해제</td><td><code>PathFrameDecoder.cs:39</code> / <code>PathFrameDecoder.cs:56</code> (두 누적 경로)</td></tr>
+<tr><td>추출된 0x06 프레임 → 검증</td><td>새로 만든 <code>CopiedBuffer</code>를 후행 전달</td><td><code>EchoServerHandler.cs:378</code> (finally)</td></tr>
+<tr><td>레거시(0x02/0x04) 첫 바이트, 0x06 헤더 없음</td><td><strong>원본 버퍼를 그대로</strong> 후행 전달</td><td><code>EchoServerHandler.cs:378</code> (finally)</td></tr>
+<tr><td>프레임 뒤 레거시 꼬리</td><td>누적 배열에서 잘라 <code>CopiedBuffer</code>로 후행 전달</td><td><code>EchoServerHandler.cs:378</code> (finally)</td></tr>
+<tr><td>레거시 + 0x06 혼합(legacy-first coalesced)</td><td>전달하지 않고 폐기 후 채널 종료</td><td><code>PathFrameDecoder.cs:82</code> (프레이밍 핸들러가 직접 해제)</td></tr>
+<tr><td>IByteBuffer가 아닌 메시지 / 빈 버퍼</td><td>전달하지 않고 폐기</td><td><code>PathFrameDecoder.cs:28</code> / <code>EchoServerHandler.cs:30</code></td></tr>
+<tr><td>레거시 처리 중 예외</td><td>예외 전파 → <code>ExceptionCaught</code>에서 채널 종료</td><td><code>finally</code>가 먼저 실행되어 1회 해제 후 전파</td></tr>
+</table>
+<p class="small">
+  출처 코드 — <span class="file">EchoServerHandler.cs:25-44, 375-380</span>:
+</p>
+<pre><code>public override void ChannelRead(IChannelHandlerContext context, object message)
+{
+    var buffer = message as IByteBuffer;
+    if (buffer == null)
+    {
+        ReferenceCountUtil.SafeRelease(message);
+        return;
+    }
+
+    try
+    {
+        if (buffer.ReadableBytes &gt;= 2)
+        {
+            byte op = buffer.GetByte(buffer.ReaderIndex);
+            if (op == PathFrameDecoder.PATH_OPCODE)
+            {
+                _pathHandler.HandlePacket(context, buffer);
+                return;
+            }
+        }
+        ... 기존 레거시 0x02 / 0x04 처리 (수정 없음) ...
+    }
+    finally
+    {
+        ReferenceCountUtil.SafeRelease(buffer);
+    }
+}</code></pre>
+<ul>
+  <li>해제에는 예외를 삼키는 <code>ReferenceCountUtil.SafeRelease</code>를 사용해, 만료 버퍼에 대한 오류가 예외로 증폭되지 않게 했습니다.</li>
+  <li>응답 전송은 모두 <code>Unpooled.CopiedBuffer</code>로 만든 새 버퍼를 <code>WriteAndFlushAsync</code> 하므로, 전송 버퍼와 입력 버퍼의 소유권이 섞이지 않습니다(<span class="file">PathPacketHandler.cs:76</span>).</li>
+  <li>프레이밍 핸들러의 누적 상태는 관리 힙의 <code>byte[]</code> + <code>int</code> 카운터이므로, 채널 종료 시 해제할 참조 카운트 자원이 남아 있지 않습니다.</li>
+</ul>
+
+<h2>10. 기존 19100 동작과의 호환성</h2>
+<table>
+<tr><th>항목</th><th>변경 전</th><th>변경 후</th></tr>
+<tr><td>리스닝 주소/포트</td><td>0.0.0.0:19100 (TLS 없음)</td><td><strong>동일</strong> — <code>bootstrap.BindAsync(19100)</code> 유지</td></tr>
+<tr><td>레거시 opcode</td><td>0x02/0x00~0x02/0x02, 0x04/0x00~0x04/0x04</td><td><strong>동일</strong> — 새 코드가 0x02/0x04를 해석하지 않음</td></tr>
+<tr><td>레거시 버퍼 전달 방식</td><td>소켓 read 버퍼를 그대로 처리</td><td><strong>동일</strong> — 0x06 헤더가 없는 레거시 read는 원본 버퍼를 그대로 후행 전달(복사 없음)</td></tr>
+<tr><td>레거시 read에 0x06이 섞인 경우</td><td>묻히 처리 (프레이밍 계층 없음)</td><td><strong>변경</strong> — 이제 <strong>채널 종료</strong>로 거부(조용한 유실 방지, 3.4절)</td></tr>
+<tr><td>레거시 브로드캐스트(락스텝)</td><td>150 ms / 400 ms 타이머</td><td><strong>변경 없음</strong></td></tr>
+<tr><td>CUDA(user/object) 동기화</td><td>userLockStep / moveMentLockStep</td><td><strong>변경 없음</strong></td></tr>
+<tr><td>파이프라인 순서</td><td><code>echo</code> 단일 핸들러</td><td><code>pathframe</code> → <code>echo</code></td></tr>
+</table>
+<p class="small">
+  0x06이 아닌 opcode만 처리하는 순수 레거시 클라이언트는 새 핸들러를 완전히 통과하며 동작이 동일합니다
+  (첫 바이트가 0x02 또는 0x04이므로 누적 경로에 들어가지 않습니다).
+</p>
+
+<h2>11. 실제로 수행한 점검</h2>
+<div class="ok">
+  <strong>수행한 것 (정적 검토만)</strong>
+  <ul>
+    <li>기존/변경 소스 전수 검토: <span class="file">EchoServerHandler.cs, Program.cs, PathPacketHandler.cs, PathPolygonDecoder.cs, PathPolygonIndexRequest.cs, PathValidator.cs, PathFrameDecoder.cs, NavMeshProviderFactory.cs</span></li>
+    <li>와이어 레이아웃과 코드 간 오프셋/길이 일치 확인(12바이트 고정 헤더, 응답 <code>12 + 21 + id길이</code> 계산)</li>
+    <li>프레이밍 경계 조건(부분 길이, 정확히 일치, 여러 프레임, 프레임+레거시 꼬리, 길이 필드 하한/상한, 누적 오버플로) 흐름을 코드상 추적</li>
+    <li>DotNetty 0.7.2 실사용 API 확인(로컬 NuGet 패키지의 XML 문서 및 배포된 <span class="file">DotNetty.Transport.dll</span> 정적 검사):
+        <code>ReferenceCountUtil.SafeRelease</code> 존재, 파이프라인 꼬리
+        <code>DefaultChannelPipeline.OnUnhandledInboundMessage</code>가 <code>ReferenceCountUtil.Release</code>를 호출함을 확인,
+        <code>IByteBuffer.GetBytes(int, byte[], int, int)</code> 등 사용 API의 존재 확인</li>
+    <li>가변성 리스크 정적 검토(<span class="file">PathValidator</span>는 요청 상태 비보유, <code>RandomNumberGenerator.GetInt32</code>/<code>Fill</code>는 정적 스레드 안전 API)</li>
+    <li>worktree 오염 파일(.<span class="file">vs</span>, 빌드 산출물, 기존 스크립트) 미변경 확인 — <code>git status</code> 비교</li>
+  </ul>
+</div>
+<div class="fail">
+  <strong>수행하지 않은 것 (요청에 따라 빌드/테스트 미실행)</strong>
+  <ul>
+    <li><code>dotnet build</code> / 컴파일 검증 <strong>미실행</strong> — 따라서 본 보고서는 컴파일 성공을 보증하지 않습니다.</li>
+    <li>서버 기동, 19100 포트 실연결, 소켓 송수신 확인 <strong>미실행</strong>.</li>
+    <li>split/coalesced read에 대한 <strong>실측 없음</strong>. 3절의 동작은 코드 추적에 근거한 설계 설명입니다.</li>
+    <li>유닛 테스트/통합 테스트 <strong>없음</strong>(이번 작업에 테스트 추가 지시도 없었음).</li>
+    <li>실제 NavMesh 데이터에 대한 Accepted 경로 확인 <strong>불가능</strong>(권위 provider 미구현, 8.3절).</li>
+  </ul>
+</div>
+
+<h2>12. 남은 리스크</h2>
+<table>
+<tr><th>#</th><th>리스크</th><th>영향</th><th>대응</th></tr>
+<tr><td>1</td><td>컴파일 미검증</td><td>컴파일 오류 가능성(특히 DotNetty 오버라이드 시그니처)</td><td>최우선 빌드 수행 필요</td></tr>
+<tr><td>2</td><td>권위 provider 미구현</td><td>Accepted 불가, 실서비스 불가</td><td>provider 구현 후 <code>providerKind</code> 분기 추가</td></tr>
+<tr><td>3</td><td>레거시 패킷 자체의 split/coalesced 미해결</td><td>기존과 동일한 오독/유실 가능성 (레거시 2개가 한 read에 오면 첫 것만 처리)</td><td>레거시에도 프레이밍 도입 시 대규모 변경 필요 → 별건</td></tr>
+<tr><td>4</td><td>부분 0x06 프레임 보류</td><td>해당 채널 메모리 최대 1 MiB 보류</td><td>상한 초과 시 채널 종료로 제한됨</td></tr>
+<tr><td>5</td><td>프레임/꼬리 복사</td><td>0x06 처리 시 프레임당 1회 복사</td><td>요청 빈도 낮음(계획 제출 시점), 허용</td></tr>
+<tr><td>6</td><td>rate limit / stale sequence 미구현</td><td>RATE_LIMITED(2), STALE_SEQUENCE(3) 미사용</td><td>후속 과제</td></tr>
+<tr><td>7</td><td>응답 <code>serverPlanId</code> 64바이트 절단</td><td>긴 ID는 잘림</td><td>현재 생성 ID는 28바이트로 영향 없음</td></tr>
+<tr><td>8</td><td>레거시 + 0x06 혼합 시 <strong>연결 종료</strong></td><td>정상 레거시 세션이 0x06 요청과 같은 read에 실려 오면 끊김</td><td>레거시 opcode(0x02/0x04) 페이로드 바이트가 우연히 0x06/0x00 + 유효 길이(8바이트)를 만들 확률은 극히 낮습니다. 끊김이 재접속으로 회복되므로 조용한 유실보다 안전한 선택입니다.</td></tr>
+<tr><td>9</td><td>레거시 read <strong>끝</strong>의 8바이트 미만 0x06 헤더</td><td>해당 read만 레거시로 전달되어 0x06 요청 유실 가능</td><td>의도적으로 감수. 길이 필드가 불완전하면 경계를 확정할 수 없고, 단독 0x06은 정상 페이로드에도 나타나 오탐이 더 큽니다.</td></tr>
+<tr><td>10</td><td>0x06 헤더 <em>뒤</em> payload 내부로 들어온 레거시 바이트</td><td>프레이밍 계층에서 감지 불가 → 검증 단계에서 Rejected</td><td>클라이언트 규약상 0x06 프레임은 연속 송신해야 합니다(3.4절).</td></tr>
+</table>
+
+<h2>13. 명시적으로 유보한 작업</h2>
+<div class="warn">
+  <strong>ShipAI 클라이언트 요청 송신자(client request sender)는 이번 작업에 포함하지 않았습니다.</strong><br>
+  위 서버 구현은 0x06/0x00 <em>수신·검증·응답</em>까지만 다루며, 0x06/0x00 패킷을 실제로 조립해서 19100으로 보내는 클라이언트 코드는
+  아직 존재하지 않습니다. 클라이언트 저장소/소스는 이번 변경에서 <strong>전혀 건드리지 않았습니다</strong>.
+  송신자 구현은 서버 측 provider 연동(8.3절)이 정리된 뒤 별도 과제로 진행해야 합니다.
+</div>
+
+<h2>14. 변경 파일 요약</h2>
+<table>
+<tr><th>파일</th><th>상태</th></tr>
+<tr><td class="file">NWO_RegionNode/PathFrameDecoder.cs</td><td>신규 → <strong>혼합 트래픽 처리 보완</strong> (legacy-first coalesced 거부, 레거시 인터리빙 거부)</td></tr>
+<tr><td class="file">NWO_RegionNode/NavMeshProviderFactory.cs</td><td>신규</td></tr>
+<tr><td class="file">NWO_RegionNode/PathValidator.cs</td><td>수정</td></tr>
+<tr><td class="file">NWO_RegionNode/PathPacketHandler.cs</td><td>수정</td></tr>
+<tr><td class="file">NWO_RegionNode/PathPolygonIndexRequest.cs</td><td>수정(버전 지정 생성자)</td></tr>
+<tr><td class="file">NWO_RegionNode/EchoServerHandler.cs</td><td>수정(생성자 주입, try/finally 단일 해제)</td></tr>
+<tr><td class="file">NWO_RegionNode/Program.cs</td><td>수정(파이프라인 1줄 추가, provider 해석 3줄 + using 1줄)</td></tr>
+<tr><td class="file">NWO_RegionNode/PathPolygonDecoder.cs</td><td>변경 없음</td></tr>
+<tr><td class="file">NWO_RegionNode/AI_Work/ShipAI_ServerPathValidation_Implementation_Report.html</td><td>전면 재작성 + 3절을 실제 동작에 맞게 갱신</td></tr>
+</table>
+<p class="small">
+  관련 없는 기존 변경 파일(.<span class="file">vs</span>/, <span class="file">bin</span>/, <span class="file">obj</span>/, 루트의 임시 파이썬 스크립트 등)은
+  의도적으로 건드리지 않았습니다.
+</p>
+
+<h3>14.1 임시 스크립트 정리</h3>
+<p class="small">
+  이번 작업에서 본인이 생성한 임시 편집 스크립트(<span class="file">fix.py</span>,
+  <span class="file">fix2.py</span>, <span class="file">fix_report.py</span>, <span class="file">fix_warn.py</span>,
+  <span class="file">replace.py</span>, <span class="file">replace3.py</span>, <span class="file">find.ps1</span>)는
+  <strong>작업 종료 전에 모두 삭제</strong>했습니다. 저장소 루트에 남아 있는 다른 <span class="file">*.py</span>
+  스크립트들은 이전 작업자가 만든 것으로, 이번 작업 범위 밖이므로 <strong>건드리지 않았습니다</strong>.
+</p>
+
+</body>
+</html>

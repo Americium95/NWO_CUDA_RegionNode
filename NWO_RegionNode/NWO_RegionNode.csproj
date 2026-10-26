@@ -27,6 +27,21 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="PathPacketHarness" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="data\server-navmesh.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>data\server-navmesh.json</Link>
+    </None>
+    <None Update="data\server-landmask.bytes">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>data\server-landmask.bytes</Link>
+    </None>
+    <None Update="path_validation.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="CudaRuntime1.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

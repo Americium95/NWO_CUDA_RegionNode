@@ -84,8 +84,14 @@ int movementMemFreeWithCuda();
 extern "C" __declspec(dllexport)
 int cudaUserMemCopy(float4* a, int arraySize)
 {
-    userMemCopyWithCuda(a, arraySize);
-    return 0;
+    if (arraySize < 0 || (arraySize > 0 && a == nullptr))
+        return (int)cudaErrorInvalidValue;
+    if (arraySize == 0)
+    {
+        userMemFreeWithCuda();
+        return (int)cudaSuccess;
+    }
+    return (int)userMemCopyWithCuda(a, (unsigned int)arraySize);
 }
 
 extern "C" __declspec(dllexport)
@@ -94,7 +100,15 @@ float* cudaUserDisFilter(
     float4 start,
     int arraySize)
 {
-    userDisFilterWithCuda(output, start, arraySize);
+    if (arraySize < 0 || (arraySize > 0 && output == nullptr))
+        return nullptr;
+    if (arraySize == 0)
+    {
+        userMemFreeWithCuda();
+        return output;
+    }
+    if (userDisFilterWithCuda(output, start, (unsigned int)arraySize) != cudaSuccess)
+        return nullptr;
 
     return output;
 }
@@ -113,8 +127,14 @@ int cudaUserMemFree()
 extern "C" __declspec(dllexport)
 int cudaMoveMentMemCopy(float4* a, int arraySize)
 {
-    movementMemCopyWithCuda(a, arraySize);
-    return 0;
+    if (arraySize < 0 || (arraySize > 0 && a == nullptr))
+        return (int)cudaErrorInvalidValue;
+    if (arraySize == 0)
+    {
+        movementMemFreeWithCuda();
+        return (int)cudaSuccess;
+    }
+    return (int)movementMemCopyWithCuda(a, (unsigned int)arraySize);
 }
 
 extern "C" __declspec(dllexport)
@@ -123,10 +143,18 @@ float* cudaMoveMentDisFilter(
     float4 start,
     int arraySize)
 {
-    movementDisFilterWithCuda(
+    if (arraySize < 0 || (arraySize > 0 && output == nullptr))
+        return nullptr;
+    if (arraySize == 0)
+    {
+        movementMemFreeWithCuda();
+        return output;
+    }
+    if (movementDisFilterWithCuda(
         output,
         start,
-        arraySize);
+        (unsigned int)arraySize) != cudaSuccess)
+        return nullptr;
 
     return output;
 }
@@ -148,6 +176,8 @@ cudaError_t userMemCopyWithCuda(
 {
     cudaError_t cudaStatus;
 
+    userMemFreeWithCuda();
+
     cudaStatus = cudaMalloc(
         (void**)&dev_user_a,
         arraySize * sizeof(float4));
@@ -158,6 +188,7 @@ cudaError_t userMemCopyWithCuda(
             stderr,
             "cudaMalloc dev_user_a failed\n");
 
+        userMemFreeWithCuda();
         return cudaStatus;
     }
 
@@ -173,8 +204,7 @@ cudaError_t userMemCopyWithCuda(
             stderr,
             "cudaMemcpy dev_user_a failed\n");
 
-        cudaFree(dev_user_a);
-        dev_user_a = nullptr;
+        userMemFreeWithCuda();
 
         return cudaStatus;
     }
@@ -189,9 +219,7 @@ cudaError_t userMemCopyWithCuda(
             stderr,
             "cudaMalloc dev_user_c failed\n");
 
-        cudaFree(dev_user_a);
-        dev_user_a = nullptr;
-
+        userMemFreeWithCuda();
         return cudaStatus;
     }
 
@@ -208,6 +236,11 @@ cudaError_t userDisFilterWithCuda(
     const float4 start,
     unsigned int size)
 {
+    if (size == 0)
+        return cudaSuccess;
+    if (c == nullptr || dev_user_a == nullptr || dev_user_c == nullptr)
+        return cudaErrorInvalidValue;
+
     unsigned int threadsPerBlock = 256;
 
     unsigned int blocks =
@@ -304,6 +337,8 @@ cudaError_t movementMemCopyWithCuda(
 {
     cudaError_t cudaStatus;
 
+    movementMemFreeWithCuda();
+
     cudaStatus = cudaMalloc(
         (void**)&dev_movement_a,
         arraySize * sizeof(float4));
@@ -314,6 +349,7 @@ cudaError_t movementMemCopyWithCuda(
             stderr,
             "cudaMalloc dev_movement_a failed\n");
 
+        movementMemFreeWithCuda();
         return cudaStatus;
     }
 
@@ -329,8 +365,7 @@ cudaError_t movementMemCopyWithCuda(
             stderr,
             "cudaMemcpy dev_movement_a failed\n");
 
-        cudaFree(dev_movement_a);
-        dev_movement_a = nullptr;
+        movementMemFreeWithCuda();
 
         return cudaStatus;
     }
@@ -345,8 +380,7 @@ cudaError_t movementMemCopyWithCuda(
             stderr,
             "cudaMalloc dev_movement_c failed\n");
 
-        cudaFree(dev_movement_a);
-        dev_movement_a = nullptr;
+        movementMemFreeWithCuda();
 
         return cudaStatus;
     }
@@ -364,6 +398,11 @@ cudaError_t movementDisFilterWithCuda(
     const float4 start,
     unsigned int size)
 {
+    if (size == 0)
+        return cudaSuccess;
+    if (c == nullptr || dev_movement_a == nullptr || dev_movement_c == nullptr)
+        return cudaErrorInvalidValue;
+
     unsigned int threadsPerBlock = 256;
 
     unsigned int blocks =

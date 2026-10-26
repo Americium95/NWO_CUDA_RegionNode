@@ -1,0 +1,229 @@
+{
+  "ticks": [
+    {
+      "scenario": "route-500-elbow",
+      "tick": 1,
+      "x": 20,
+      "z": 0,
+      "heading": 193,
+      "active": true,
+      "crossTrack": 0
+    },
+    {
+      "scenario": "route-500-elbow",
+      "tick": 2,
+      "x": 40,
+      "z": 0,
+      "heading": 193,
+      "active": true,
+      "crossTrack": 0
+    },
+    {
+      "scenario": "route-500-elbow",
+      "tick": 3,
+      "x": 60,
+      "z": 0,
+      "heading": 193,
+      "active": true,
+      "crossTrack": 0
+    },
+    {
+      "scenario": "route-500-elbow",
+      "tick": 4,
+      "x": 80,
+      "z": 0,
+      "heading": 193,
+      "active": true,
+      "crossTrack": 0
+    },
+    {
+      "scenario": "route-500-elbow",
+      "tick": 5,
+      "x": 100,
+      "z": 0,
+      "heading": 193,
+      "active": true,
+      "crossTrack": 0
+    },
+    {
+      "scenario": "route-500-elbow",
+      "tick": 6,
+      "x": 120,
+      "z": 0,
+      "heading": 193,
+      "active": true,
+      "crossTrack": 0
+    },
+    {
+      "scenario": "route-500-elbow",
+      "tick": 7,
+      "x": 140,
+      "z": 0,
+      "heading": 193,
+      "active": true,
+      "crossTrack": 0
+    },
+    {
+      "scenario": "route-500-elbow",
+      "tick": 8,
+      "x": 160,
+      "z": 0,
+      "heading": 193,
+      "active": true,
+      "crossTrack": 0
+    },
+    {
+      "scenario": "route-500-elbow",
+      "tick": 9,
+      "x": 180,
+      "z": 0,
+      "heading": 193,
+      "active": true,
+      "crossTrack": 0
+    },
+    {
+      "scenario": "route-500-elbow",
+      "tick": 10,
+      "x": 200,
+      "z": 0,
+      "heading": 193,
+      "active": true,
+      "crossTrack": 0
+    },
+    {
+      "scenario": "route-500-elbow",
+      "tick": 11,
+      "x": 220,
+      "z": 0,
+      "heading": 193,
+      "active": true,
+      "crossTrack": 0
+    },
+    {
+      "scenario": "route-500-elbow",
+      "tick": 12,
+      "x": 240,
+      "z": 0,
+      "heading": 193,
+      "active": true,
+      "crossTrack": 0
+    },
+    {
+      "scenario": "route-500-elbow",
+      "tick": 13,
+      "x": 260,
+      "z": 0,
+      "heading": 193,
+      "active": true,
+      "crossTrack": 0
+    },
+    {
+      "scenario": "route-500-elbow",
+      "tick": 14,
+      "x": 280,
+      "z": 0,
+      "heading": 193,
+      "active": true,
+      "crossTrack": 0
+    },
+    {
+      "scenario": "route-500-elbow",
+      "tick": 15,
+      "x": 300,
+      "z": 0,
+      "heading": 193,
+      "active": true,
+      "crossTrack": 0
+    },
+    {
+      "scenario": "route-500-elbow",
+      "tick": 16,
+      "x": 320,
+      "z": 0,
+      "heading": 193,
+      "active": true,
+      "crossTrack": 0
+    },
+    {
+      "scenario": "route-500-elbow",
+      "tick": 17,
+      "x": 340,
+      "z": 0,
+      "heading": 193,
+      "active": true,
+      "crossTrack": 0
+    },
+    {
+      "scenario": "route-500-elbow",
+      "tick": 18,
+      "x": 360,
+      "z": 0,
+      "heading": 193,
+      "active": true,
+      "crossTrack": 0
+    },
+    {
+      "scenario": "route-500-elbow",
+      "tick": 19,
+      "x": 380,
+      "z": 0,
+      "heading": 193,
+      "active": true,
+      "crossTrack": 0
+    },
+    {
+      "scenario": "route-500-elbow",
+      "tick": 20,
+      "x": 400,
+      "z": 0,
+      "heading": 193,
+      "active": true,
+      "crossTrack": 0
+    },
+    {
+      "scenario": "route-500-elbow",
+      "tick": 21,
+      "x": 420,
+      "z": 0,
+      "heading": 193,
+      "active": true,
+      "crossTrack": 0
+    },
+    {
+      "scenario": "route-500-elbow",
+      "tick": 22,
+      "x": 440,
+      "z": 0,
+      "heading": 193,
+      "active": true,
+      "crossTrack": 0
+    },
+    {
+      "scenario": "route-500-elbow",
+      "tick": 23,
+      "x": 460,
+      "z": 0,
+      "heading": 193,
+      "active": true,
+      "crossTrack": 0
+    },
+    {
+      "scenario": "route-500-elbow",
+      "tick": 24,
+      "x": 480,
+      "z": 0,
+      "heading": 193,
+      "active": true,
+      "crossTrack": 0
+    },
+    {
+      "scenario": "route-500-elbow",
+      "tick": 25,
+      "x": 500,
+      "z": 0,
+      "heading": 193,
+      "active": true,
+      "crossTrack": 0
+    }
+  ]
+}

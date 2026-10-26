@@ -1,0 +1,8 @@
+C:\GitHub\NWO_CUDA_RegionNode\artifacts-navmesh-build\obj\Debug\net6.0\NWO_RegionNode.csproj.AssemblyReference.cache
+C:\GitHub\NWO_CUDA_RegionNode\artifacts-navmesh-build\obj\Debug\net6.0\NWO_RegionNode.csproj.SuggestedBindingRedirects.cache
+C:\GitHub\NWO_CUDA_RegionNode\artifacts-navmesh-build\obj\Debug\net6.0\NWO_RegionNode.dll.config
+C:\GitHub\NWO_CUDA_RegionNode\artifacts-navmesh-build\obj\Debug\net6.0\NWO_RegionNode.GeneratedMSBuildEditorConfig.editorconfig
+C:\GitHub\NWO_CUDA_RegionNode\artifacts-navmesh-build\obj\Debug\net6.0\NWO_RegionNode.AssemblyInfoInputs.cache
+C:\GitHub\NWO_CUDA_RegionNode\artifacts-navmesh-build\obj\Debug\net6.0\NWO_RegionNode.AssemblyInfo.cs
+C:\GitHub\NWO_CUDA_RegionNode\artifacts-navmesh-build\obj\Debug\net6.0\NWO_RegionNode.csproj.CoreCompileInputs.cache
+C:\GitHub\NWO_CUDA_RegionNode\artifacts-navmesh-build\obj\Debug\net6.0\NWO_RegionNode.sourcelink.json

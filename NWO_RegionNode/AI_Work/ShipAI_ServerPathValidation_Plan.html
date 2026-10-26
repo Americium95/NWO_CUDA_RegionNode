@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NWO RegionNode 서버 구조 및 ShipAI 경로 송수신 인터페이스</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1020;--panel:#131c31;--line:#2a3856;--text:#e7eefc;--muted:#a6b5d0;--cyan:#67e8f9;--green:#86efac;--amber:#fcd34d;--red:#fda4af}*{box-sizing:border-box}body{margin:0;background:radial-gradient(1000px 500px at 80% -10%,#17385b 0,transparent 65%),var(--bg);color:var(--text);font:16px/1.7 "Segoe UI","Malgun Gothic",sans-serif}main{max-width:1120px;margin:auto;padding:42px 24px 80px}header{padding:36px;border:1px solid var(--line);border-radius:22px;background:linear-gradient(135deg,#152541,#11192a)}.eyebrow{color:var(--cyan);font-weight:700;letter-spacing:.12em;font-size:13px}h1{font-size:clamp(30px,5vw,48px);line-height:1.2;margin:14px 0}h2{font-size:25px;margin:0 0 18px}h3{font-size:18px;color:var(--cyan);margin:22px 0 8px}p{margin:8px 0;color:var(--muted)}section{margin-top:24px;padding:28px;border:1px solid var(--line);border-radius:18px;background:rgba(19,28,49,.92)}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}.card{padding:16px;border:1px solid var(--line);background:#10182a;border-radius:14px}.card b{display:block;color:var(--green);margin-bottom:5px}.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:18px 0}.flow span{background:#1b2942;border:1px solid #344966;border-radius:999px;padding:7px 13px}.flow i{color:var(--cyan);font-style:normal}table{width:100%;border-collapse:collapse;margin:12px 0;font-size:14px}th,td{text-align:left;vertical-align:top;padding:11px;border-bottom:1px solid var(--line)}th{color:var(--cyan);background:#111a2d}pre{white-space:pre-wrap;overflow-wrap:anywhere;padding:18px;border:1px solid #30405e;border-radius:12px;background:#080d18;color:#d7e7ff;font:13px/1.55 Consolas,monospace}.pill{display:inline-block;padding:3px 9px;border-radius:99px;background:#12343b;color:var(--cyan);font-size:12px}.warn{border-left:3px solid var(--amber);padding:10px 14px;background:#302718}.ok{color:var(--green)}.bad{color:var(--red)}ol li,ul li{margin:5px 0;color:var(--muted)}footer{margin-top:22px;color:#8091ae;font-size:13px}@media(max-width:650px){main{padding:18px 12px 48px}section,header{padding:20px}table{font-size:12px}}
+</style>
+</head>
+<body><main>
+<header>
+  <div class="eyebrow">NWO · SHIP AI · SERVER TRUST BOUNDARY</div>
+  <h1>RegionNode × ShipAI 인터페이스</h1>
+  <p>NWO_RegionNode의 현재 TCP 바이너리 패킷 구조에 맞춘 경로 계획 송수신(바이너리 와이어 포맷) 및 서버 무작위 기하 검증 규약</p>
+  <p><span class="pill">설계 초안 v3 · 바이너리 본문</span>　<span class="pill">JSON 본문 아님</span>　서버: <code>NWO_RegionNode</code> · 클라이언트: <code>Assets/ship/ShipAI</code></p>
+</header>
+
+<section>
+<h2>1. 프로젝트 구조와 현재 통신 방식</h2>
+<p>현재 프로젝트는 .NET 6 콘솔 서버이며 <code>Program.Main → RunServerAsync → DotNetty TCP :19100 → EchoServerHandler.ChannelRead</code> 구조다. <code>Program.cs</code>의 19100 파이프라인에는 <code>pipeline.AddLast("echo", new EchoServerHandler())</code> <b>한 줄만</b> 있고 길이 프레이밍 decoder가 없다. 기존 패킷은 첫 바이트가 opcode(<code>buffer.GetByte(0)</code>), 두 번째 바이트가 서브 타입이며 payload는 <code>BitConverter</code> 기반 little-endian 바이너리다. <code>0x02</code> 계열은 사용자 위치 동기화, <code>0x04</code> 계열은 오브젝트 상태/공격이다. 경로 계획 검증은 기존 <code>0x04</code> 계열의 미할당 서브타입으로 확장하여 처리한다(요청 <code>0x10</code>, 응답 <code>0x11</code>). 0x10/0x11은 현재 소스 검색 기준 미할당으로 간주한다.</p>
+<div class="grid">
+<article class="card"><b>Program.cs</b><p>TCP 서버 bind(:19100), 주기 동기화 및 브로드캐스트. 프레이밍 decoder 없음.</p></article>
+<article class="card"><b>EchoServerHandler.cs</b><p>opcode(0)/서브타입(1) 디스패치, 고정 오프셋 읽기, 상태 갱신</p></article>
+<article class="card"><b>Terrain.cs</b><p>현재 지형 <i>높이</i> 샘플 기반 충돌 보조 로직. navmesh가 아니다.</p></article>
+<article class="card"><b>AI_Work/</b><p>이 문서와 구현 차이안·경로 프로토콜 산출물 위치</p></article>
+</div>
+<p class="warn">기존 핸들러는 <code>ChannelHandlerAdapter</code>를 직접 상속해 수신 <code>IByteBuffer</code>를 해제하지 않고 <code>readerIndex</code>도 전진시키지 않은 채 <code>GetByte(0..)</code> 절대 오프셋만 읽는다. 즉 기존 프로토콜에는 <b>길이 프리픽스도, 고정 길이 검증도, 소비 규칙도 없다</b>. 본 설계는 <b>기존 TCP 서버(포트 19100)에 공유</b>되는 확장으로, 패킷은 자기 헤더에 전체 길이를 담는 <b>자기 경계(self-delimiting)</b> 형식의 12바이트 헤더([opcode 0x04:1][subtype request 0x10/response 0x11:1][protocolVersion uint16:1][totalPacketLength uint32:4][requestId uint32:4], LE)를 유지한다. 같은 TCP 스트림에서 기존 0x02/0x04 패킷과 새 0x04/0x10, 0x04/0x11 패킷을 섞어 처리하려면, 프레이밍/디스패치 계층이 스트림 앞단에서 <b>opcode/subtype</b>를 먼저 검사하여 각 메시지의 헤더/길이 규칙에 따라 정확히 소비해야 하며, 기존 핸들러 자체는 현재 이 스트림 프레이밍 규칙을 따르지 않으므로 <b>기존 고정길이 라우팅은 분리/재검토가 필요</b>하다.</p>
+<p>현재 프로젝트에는 navmesh와 경로 검증이 구현되어 있지 않으므로 <b>아래 규약은 추가 구현 제안이며 아직 어떤 서버 소스에도 적용되지 않았다.</b></p>
+</section>
+
+<section>
+<h2>2. 목표와 신뢰 경계</h2>
+<div class="grid">
+<article class="card"><b>클라이언트 책임</b><p>현재 선박 상태, 목적지 다각형, 방문 계획과 <b>자신이 계산한</b> 다각형 통로(polygon corridor)를 제출한다.</p></article>
+<article class="card"><b>서버 책임</b><p>서버가 보유한 navmesh와 규칙으로 요청을 정규화하고, 통로 전체 구조와 무작위 구간을 <b>서버 기하로 재계산</b>해 검증한다.</p></article>
+<article class="card"><b>판정 원칙</b><p>클라이언트가 보낸 <code>polygonIndex</code>, <code>visitId</code>, 순서, 길이 성질은 <b>증거가 아니라 주장(claim)</b>이다. 최종 판정은 서버 계산으로만 내린다.</p></article>
+</div>
+<p class="warn">무작위 구간 표본검사는 위험 기반 완화다. 검사하지 않은 구간까지 수학적으로 보증하지 않는다. 신뢰 구간(신뢰 경로 섹션)은 표본으로 추출되며, 전체 경로의 인접성을 결정론적으로 모두 순회하지 않는다. 기본 표본 예산은 min(64, 세그먼트 수)개의 고유 에지이며, 표본에 포함되지 않은 세그먼트에는 확률적 갭이 존재한다. 보상·경쟁 등 고위험 행동에는 전체 통로 검증 또는 표본 수 상향 정책을 적용한다.</p>
+<h3>2.1 polygon index의 의미 조건 (핵심)</h3>
+<p>정수 <code>polygonIndex</code>는 <b>좌표가 아니며 전역 식별자가 아니다.</b> 서버 navmesh의 다각형 배열 순번일 뿐이며, 그 배열은 <code>navMeshVersion</code>이 지정한 특정 버전에서만 유효하다. 따라서 규약은 다음을 강제한다.</p>
+<ul>
+<li><b>버전 선행 검사:</b> 서버는 요청 <code>navMeshVersion</code>이 서버 권위 버전과 바이트 단위로 일치하는지 <b>다각형 인덱스를 하나라도 해석하기 전에</b> 확인한다. 불일치 시 <code>resync_required</code>로 즉시 종료하고 어떤 인덱스도 해석·비교·조회하지 않는다.</li>
+<li><b>같은 버전 안에서만 통상:</b> 일치한다고 해도 인덱스의 존재·범위·인접성은 서버 navmesh 테이블에서 다시 조회한다. 클라이언트가 보낸 번호가 서버 테이블에 없으면 거절이다.</li>
+<li><b>버전이 바뀌면 인덱스 재사용 불가:</b> 클라이언트 navmesh 애셋이 갱신되면 이전 인덱스로 만든 통로는 의미가 사라진다. 서버 navmesh 배포와 클라이언트 애셋 배포는 반드시 <code>navMeshVersion</code>으로 동결되어야 한다.</li>
+<li><b>버전 불일치 응답의 인덱스:</b> <code>resync_required</code> 응답에는 요청 인덱스를 해석해 얻은 어떤 값도 담지 않는다. 오직 서버 권위 버전 문자열만 돌려준다.</li>
+</ul>
+</section>
+
+<section>
+<h2>3. 요청 흐름</h2>
+<div class="flow"><span>인증 세션</span><i>→</i><span>헤더·길이·버전 검사</span><i>→</i><span>본문 바인딩/범위/오버플로 검사</span><i>→</i><span>navMeshVersion 일치</span><i>→</i><span>통로 구조·인접성 검증</span><i>→</i><span>서버 무작위 포털 표본 생성</span><i>→</i><span>서버 navmesh 기하 probe</span><i>→</i><span>수락·거절·제한</span></div>
+<p>표본은 요청 안에 클라이언트 seed가 없다. 서버 CSPRNG로 뽑고, 재현 가능한 감사가 필요하면 서버 secret과 요청 식별자를 이용한 HMAC 기반 선택을 서버 로그에 저장한다. <b>응답에 표본 인덱스·표본 좌표·난수 seed를 절대 담지 않는다.</b></p>
+</section>
+
+<section>
+<h2>4. 경로 송수신 인터페이스 규약 (바이너리)</h2>
+<p>실제 송수신은 DotNetty TCP 위에 <b>바이너리 와이어 포맷만</b> 사용한다. 본문은 텍스트/JSON/REST/HTTP가 아니다. REST/HTTP는 사용하지 않는다. 모든 정수 필드는 <b>little-endian, 고정 폭</b>이며, 문자열은 <b>UTF-8 바이트 + 선행 바이트 길이</b>(NUL 종단 없음)다.</p>
+
+<h3>4.1 전송 프레이밍과 기존 opcode 호환성</h3>
+<p><b>0x04/0x10·0x04/0x11 경로 프로토콜</b> 패킷은 <b>헤더 안에 전체 길이(<code>totalPacketLength</code>)를 갖는다</b>. 즉 길이 프리픽스를 별도로 붙이지 않으며, 패킷 자체가 경계를 정의한다(<b>자기 경계</b>).</p>
+<pre>[클라이언트]                                  [서버 · 기존 19100 공유 연결의 프레이머]
+  04 10 헤더(12B) + 본문  ──────▶   바이트 누적 버퍼
+                                          1) 1바이트 모였는가?            (opcode peek)
+                                          2) 2바이트 모였는가?            (subtype peek)
+                                          3) opcode==0x04 and subtype ∈ {0x10, 0x11} 인가?
+                                               아니면 → 기존 0x02/0x04 고정길이 규칙으로 위임
+                                          4) 12바이트 모였는가?  (opcode·subtype·version·totalPacketLength·requestId)
+                                          5) 12 &lt;= totalPacketLength &lt;= 1,048,576 ?  protocolVersion==1 인가?
+                                          6) totalPacketLength 바이트 모였는가?
+                                          7) 정확히 totalPacketLength 만큼 소비 → 경로 검증 핸들러
+                                          8) 검증 결과를 0x04/0x11 응답으로 기록</pre>
+<table>
+<thead><tr><th>조건</th><th>필수 동작</th><th>금지</th></tr></thead>
+<tbody>
+<tr><td>누적 바이트 &lt; 12</td><td>아무것도 소비하지 않고 다음 read로 대기</td><td>0으로 채워 파싱, 강제 진행</td></tr>
+<tr><td><code>totalPacketLength &lt; 12</code> 또는 <code>&gt; 1,048,576</code></td><td>프레임 손상으로 처리하고 연결 종료</td><td>잘라내어 재동기화, 버퍼 스킵</td></tr>
+<tr><td>누적 바이트 &lt; <code>totalPacketLength</code></td><td>대기(단, 채널별 대기 deadline 적용)</td><td>부분 본문으로 검증 진행</td></tr>
+<tr><td>완성</td><td>정확히 <code>totalPacketLength</code> 바이트만 소비</td><td>더 많이/덜 소비</td></tr>
+<tr><td><code>byte[0] == 0x04 and byte[1] == 0x10</code></td><td>PathPlan <b>요청</b>(0x04/0x10) — <code>totalPacketLength</code> 경계로 정확히 소비한 뒤 검증 핸들러로 위임</td><td>기존 고정길이 해석 혼동</td></tr>
+<tr><td><code>byte[0] == 0x04 and byte[1] == 0x11</code></td><td>PathPlan <b>응답</b>(0x04/0x11) — 경로 프로토콜로 <b>프레이밍해 정확히 소비</b>한 뒤, 서버 포트는 요청만 수신하므로 <b>방향 위반으로 fail-closed(연결 종료)</b></td><td>응답을 요청으로 해석, 기존 고정길이 해석 혼동</td></tr>
+<tr><td><code>byte[0] == 0x02</code> 또는 (<code>byte[0] == 0x04</code> and <code>byte[1] not in {0x10,0x11}</code>)</td><td>기존 0x02/0x04(기타 서브타입) 경로의 <b>고정 길이 규칙</b>으로 <b>그대로 위임</b></td><td>길이 프리픽스 해석</td></tr>
+<tr><td><code>byte[0]</code>가 그 외</td><td>알 수 없는 프로토콜로 간주하고 연결 종료(fail-closed)</td><td>1바이트 건너뛰고 재탐색(패킷 중간에서 동기화됨)</td></tr>
+</tbody>
+</table>
+<p class="warn"><b>기존 0x02/0x04와의 호환성 — 결론.</b> 새 경로는 <b>opcode 0x04, subtype 0x10(요청)/0x11(응답)</b>로 기존 0x04 계열과 <b>같은 opcode 안에서</b> 분기된다. 따라서 opcode 한 바이트만으로는 두 경로를 가를 수 없고, 디스패치는 <b><code>(opcode, subtype)</code> 두 바이트</b>를 peeking(인덱스 미전진)하여 판별해야 한다. 0x04/0x10·0x04/0x11은 <code>totalPacketLength</code>로 자기경계를 정의하고, <code>0x02</code> 및 <code>0x04</code>의 그 밖 서브타입은 기존 <b>고정 길이 테이블</b>로 경계를 잡는다. <b>같은 TCP 연결(기존 공유 포트 19100)에서 섞어 읽기 위해서는</b> 스트림 프레이밍 계층이 (opcode, subtype) 기반으로 <b>정확히 메시지 단위로 소비</b>해야 한다. 기존 <code>EchoServerHandler</code>는 <code>readerIndex</code>를 전진시키지 않고 첫 바이트 절대 오프셋만 읽으며 수신 <code>IByteBuffer</code>를 해제하지도 <code>FireChannelRead</code>하지도 않으므로, <b>(opcode, subtype)를 먼저 검사하는 프레이머/디스패처를 스트림 앞단에 배치</b>하여 각 경로로 위임하고, 기존 핸들러가 보는 바이트 스트림이 올바르게 소비되도록 <b>소비 규칙(consume)</b>을 명확히 해야 한다. 본 설계는 <b>기존 프로토콜 레이아웃은 변경하지 않는다</b>는 원칙 하에 확장만을 제안하며, 별도 포트/별도 리스너를 추가하지 않는다.</p>
+<p>기존 패킷의 고정 길이는 소스에서 읽는 최대 오프셋으로 얻는다(현 코드가 검증하지 않으므로 “필요 최소 길이”다): <code>0x02/0x00</code>=6, <code>0x02/0x01</code>=25, <code>0x02/0x02</code>=12, <code>0x04/0x00</code>=19, <code>0x04/0x01</code>=21, <code>0x04/0x02</code>=11, <code>0x04/0x03</code>=2, <code>0x04/0x04</code>=28. 테이블에 없는 (opcode, 서브타입) 조합은 길이를 <b>추측하지 않고</b> 연결을 종료한다.</p>
+
+<h3>4.2 공통 헤더 — 정확히 12 바이트</h3>
+<pre>오프셋  크기  타입      필드                  값/설명
+  0      1    byte      opcode                0x04 (기존 0x04 계열 확장)
+  1      1    byte      subtype               요청 0x10, 응답 0x11
+  2      2    uint16    protocolVersion       1 (LE)
+  4      4    uint32    totalPacketLength     LE. 헤더 12바이트를 <b>포함</b>한 전체 패킷 길이
+  8      4    uint32    requestId             LE. 요청-응답 상관관계 (서버 검증 로직은 사용하지 않음)
+
+헤더 크기 = 1+1+2+4+4 = 12 bytes  (고정)
+본문 시작 = 패킷 오프셋 12, 본문 길이 = totalPacketLength - 12
+요청 바이트 시작: 04 10 01 00 | LLLLLLLL | RRRRRRRR
+응답 바이트 시작: 04 11 01 00 | LLLLLLLL | RRRRRRRR</pre>
+<ul>
+<li><code>totalPacketLength</code>는 <b>헤더를 포함한</b> 값이므로 <code>bodyLength</code> 필드를 따로 두지 않는다. 본문 길이는 항상 <code>totalPacketLength - 12</code>로 유일하게 결정된다(별도 <code>bodyLength</code> 필드가 없으므로 불일치 가능성 자체가 없다).</li>
+<li>프레이밍 검증이 통과하면 본문은 <b>반드시 정확히</b> <code>totalPacketLength - 12</code> 바이트여야 한다. 남거나 모자라면 잘라내지 않고 거절한다.</li>
+<li><code>requestId</code>는 전송 계층의 상관관계용이다. 검증 로직은 <code>planSequence</code>로만 요청/응답을 대조한다.</li>
+<li>응답 <code>requestId</code>는 요청 값을 그대로 복사한다. 서버는 <code>requestId</code>가 0이어도 <code>planSequence</code>나 사유 코드로 원인을 특정할 수 없으므로 클라이언트 로그는 (opcode, subtype, requestId, totalPacketLength)만 남긴다.</li>
+</ul>
+
+<h3>4.3 요청 본문 <code>PathPlanRequestV1</code> (바이너리)</h3>
+<pre>[본문 시작] 상대오프셋  크기  타입    필드                        제약
+                      8     uint64  planSequence                &gt; 0, 선박별 단조 증가
+                      2     uint16  navMeshVersionByteLength    1 &lt;= N &lt;= 128
+                      N     byte[]  navMeshVersionUtf8          정확히 N 바이트, 유효 UTF-8, NUL 금지
+                      4     int32   startPolygonIndex           &gt;= 0, 서버 테이블에 존재해야 함
+                      4     int32   destinationPolygonIndex     &gt;= 0, 서버 테이블에 존재해야 함
+                      2     uint16  visitCount                  0 &lt;= K &lt;= 256
+                      ...   (visit 레코드 × K)
+                      4     uint32  pathPolygonCount            2 &lt;= P &lt;= 4096  (압축 후 길이)
+                      4×P   int32   pathPolygonIndex[P]         통과 순서, 연속 중복 압축 완료 상태
+                      8     uint64  clientComputedAtUtcMs       &gt; 0, UNIX epoch 밀리초</pre>
+<pre>[visit 레코드] 상대오프셋  크기  타입    필드                  제약
+                    2     uint16  visitIdByteLength       0 &lt;= M &lt;= 64  (0 허용 = 익명 방문)
+                    M     byte[]  visitIdUtf8             정확히 M 바이트, 유효 UTF-8, NUL 금지
+                    2+M   int32   polygonIndex            &gt;= 0, 서버 테이블에 존재해야 함
+                    6+M   uint16  order                   0 &lt;= order &lt;= 65535, 배열 위치와 동일해야 함</pre>
+<h4>경로(polygon corridor) 규칙</h4>
+<ul>
+<li><code>pathPolygonIndex</code>는 <b>전체 순서 있는 다각형 통로</b>다. 부분 경로나 생략이 아니라 모든 통과 다각형을 순서대로 담는다.</li>
+<li>시작 인덱스(<code>path[0]</code>)는 <code>startPolygonIndex</code>와 같아야 하고, 마지막(<code>path[P-1]</code>)는 <code>destinationPolygonIndex</code>와 같아야 한다.</li>
+<li><b>연속 중복 인덱스는 클라이언트가 압축해서 보낸다.</b> 인접 두 원소가 같은 polygon id이면 전송 전에 하나로 합치고, <code>pathPolygonCount</code>는 압축 <b>후</b> 길이여야 한다. 서버는 압축되지 않은 입력을 <code>PLAN_INVALID</code>로 거절한다(같은 다각형 안에서의 왕복 이동은 통로가 아니라 노이즈이며 표본 예산을 소모한다).</li>
+<li>압축 후 길이가 <code>[2, 4096]</code>을 벗어나면 거절한다. <code>pathPolygonCount</code>가 4096 초과면 서버는 배열을 할당하지 않고 즉시 거절한다.</li>
+<li>인접 두 다각형의 <b>인접성(공유 포털 존재 여부)</b>은 클라이언트가 보장하는 것이 아니다. 서버가 자기 navmesh에서 조회·검증한다. 비인접이면 <code>PATH_DISCONTINUITY</code>다.</li>
+<li>경로에 위경도·높이·거리 등 <b>기하 좌표를 담지 않는다.</b> 기하는 서버 navmesh가 소유하며, 클라이언트가 보낸 숫자는 전부 검증 대상 "주장"이다.</li>
+</ul>
+
+<h3>4.4 응답 본문 <code>PathPlanValidationV1</code> (바이너리)</h3>
+<pre>[본문 시작] 상대오프셋  크기  타입    필드                        제약/의미
+                      8     uint64  planSequence                요청 값 그대로 복사
+                      1     byte    decision                    0 accepted / 1 rejected / 2 limited / 3 resync_required
+                      2     uint16  reasonCode                  아래 4.5의 안정 수치 맵
+                      2     uint16  navMeshVersionByteLength    0 &lt;= N &lt;= 128
+                      N     byte[]  navMeshVersionUtf8          서버 권위 버전 문자열
+                      4     uint32  sampledSegments             실제 probe 한 서로 다른 통로 스텝 수
+                      4     uint32  totalSegments               전체 통로 스텝 수 = pathPolygonCount - 1 (&le; 4095)
+                      2     uint16  serverPlanIdByteLength      0 = null, 아니면 1 &lt;= P &lt;= 64
+                      P     byte[]  serverPlanIdUtf8            불투명 식별자, 요청에서 파생 금지</pre>
+<ul>
+<li>문자열 인코딩은 요청 본문과 동일하다(UTF-8, 선행 바이트 길이, NUL 종단 없음).</li>
+<li><code>serverPlanId</code>는 <b>요청 내용에서 파생하지 않는다.</b> 서버 CSPRNG 16바이트에서 만든 불투명 값(예 <code>sp1_</code> + 소문자 hex)을 UTF-8로 인코딩한다. 거절 응답에서는 길이 0(null)이 되지만, 계약상 0은 "없음"일 뿐 거절 사유를 대신하지 않으므로 클라이언트는 <code>decision</code>/<code>reasonCode</code>를 함께 본다.</li>
+<li>응답 본문 최대 215바이트, 최대 패킷 227바이트. 요청 본문 최대 34,976바이트, 최대 패킷 34,988바이트다(4.6 참고).</li>
+</ul>
+
+<h3>4.5 결정 코드와 사유 코드 (안정 수치 맵)</h3>
+<p>의사코드는 아니며 wire 값 자체가 이 정수다. 서버는 아래 값만 송신하고, 클라이언트는 아래 표에 없는 값을 <b>승인으로 취급하지 않는다</b>.</p>
+<table>
+<thead><tr><th>decision (byte)</th><th>값</th><th>reasonCode (uint16)</th><th>값</th><th>의미</th><th>클라이언트 처리</th></tr></thead>
+<tbody>
+<tr><td><code>accepted</code></td><td><b>0</b></td><td><code>VALID</code></td><td><b>0</b></td><td>전 검사 통과</td><td>승인 통로로 반영</td></tr>
+<tr><td><code>rejected</code></td><td><b>1</b></td><td><code>INVALID_REQUEST</code></td><td><b>1</b></td><td>본문 바인딩/범위/오버플로/문자열/개수 위반, 지원하지 않는 version</td><td>폐기, 수정 후 재요청</td></tr>
+<tr><td><code>limited</code></td><td><b>2</b></td><td><code>RATE_LIMITED</code></td><td><b>2</b></td><td>요청 윈도 초과 또는 서버 검사(probe) 예산 소진</td><td>승인 아님. 지수 백오프 후 재요청</td></tr>
+<tr><td><code>rejected</code></td><td><b>1</b></td><td><code>STALE_SEQUENCE</code></td><td><b>3</b></td><td>planSequence 역행·재전송 또는 계획 노후</td><td>폐기 후 최신 sequence로 재요청</td></tr>
+<tr><td><code>rejected</code></td><td><b>1</b></td><td><code>START_MISMATCH</code></td><td><b>4</b></td><td>서버 권위 선박 다각형과 startPolygonIndex 불일치</td><td>폐기 후 실제 위치 다각형으로 재계산</td></tr>
+<tr><td><code>resync_required</code></td><td><b>3</b></td><td><code>RESYNC_REQUIRED</code></td><td><b>5</b></td><td>navMeshVersion 불일치</td><td>버전 재동기화 후 재요청</td></tr>
+<tr><td><code>rejected</code></td><td><b>1</b></td><td><code>PLAN_INVALID</code></td><td><b>6</b></td><td>구조 위반(끝점 불일치, 인덱스 범위, 비압축 중복, 포털 모호성)</td><td>폐기 후 재계산</td></tr>
+<tr><td><code>rejected</code></td><td><b>1</b></td><td><code>PATH_DISCONTINUITY</code></td><td><b>7</b></td><td>인접 다각형 쌍이 공유 포털을 갖지 않음(비인접 점프)</td><td>폐기 후 재계산</td></tr>
+<tr><td><code>rejected</code></td><td><b>1</b></td><td><code>OFF_MESH_SAMPLE</code></td><td><b>8</b></td><td>표본이 통행 불가 또는 판정 불가</td><td>폐기 후 재계산</td></tr>
+<tr><td><code>rejected</code></td><td><b>1</b></td><td><code>FORBIDDEN_REGION</code></td><td><b>9</b></td><td>금지 영역 또는 통행 폭(clearance) 부족</td><td>폐기 후 재계산</td></tr>
+<tr><td><code>rejected</code></td><td><b>1</b></td><td><code>VISIT_UNREACHED</code></td><td><b>10</b></td><td>visit 다각형이 통행 불가이거나 통로에 없음</td><td>폐기 후 재계산</td></tr>
+<tr><td><code>rejected</code></td><td><b>1</b></td><td><code>VISIT_ORDER_MISMATCH</code></td><td><b>11</b></td><td>visit 도달 순서가 선언과 불일치</td><td>폐기 후 재계산</td></tr>
+</tbody>
+</table>
+<p>결정 코드는 사유 코드에서 <b>하나의 함수로만</b> 파생한다(승인 규칙의 단일 출처). <code>VALID(0)→accepted(0)</code>, <code>RATE_LIMITED(2)→limited(2)</code>, <code>RESYNC_REQUIRED(5)→resync_required(3)</code>, <b>그 외 전부 <code>rejected(1)</code></b>. 사유 코드가 늘어도 승인 규칙은 변하지 않는다.</p>
+<p class="warn"><code>reasonCode</code>는 <b>안정(stable)</b> 계약이다. 값을 재사용하거나 의미를 바꾸지 않는다. 신규 사유는 끝에 새 번호를 추가하고 기존 번호는 남겨둔다. 클라이언트는 미할당 번호를 받으면 <b>fail-closed로 해당 응답을 폐기</b>한다(알 수 없는 사유를 "일단 통과"로 해석하지 않는다).</p>
+
+<h3>4.6 크기 상한 (명시적)</h3>
+<table>
+<thead><tr><th>항목</th><th>값</th><th>비고</th></tr></thead>
+<tbody>
+<tr><td>최소 패킷 길이</td><td><b>12</b> 바이트</td><td>헤더만 있는 패킷은 잘못된 것으로 간주. 요청 최소는 53, 응답 최소는 35</td></tr>
+<tr><td>최대 패킷 길이</td><td><b>1,048,576</b> 바이트 (1 MiB)</td><td><code>totalPacketLength</code> 상한. <b>파싱·할당 전에</b> 검사해 메모리를 제한하는 유일한 지점</td></tr>
+<tr><td>최대 요청 패킷</td><td><b>34,988</b> 바이트</td><td>12 + 8 + 2 + 128 + 4 + 4 + 2 + (256×72) + 4 + (4096×4) + 8</td></tr>
+<tr><td>최대 응답 패킷</td><td><b>227</b> 바이트</td><td>12 + 8 + 1 + 2 + 2 + 128 + 4 + 4 + 2 + 64</td></tr>
+<tr><td>최대 path 다각형 수</td><td><b>4096</b> (압축 후, 하한 2)</td><td>통로 스텝 수 <code>totalSegments</code> 상한은 4095</td></tr>
+<tr><td>최대 방문 수</td><td><b>256</b> (0 허용)</td><td>visit 레코드 = 2 + 64 + 4 + 2 = 최대 72 바이트</td></tr>
+<tr><td>navMeshVersion 최대 바이트</td><td><b>128</b></td><td>요청은 1 이상(비어 있으면 무의미), 응답은 0 허용</td></tr>
+<tr><td>visitId 최대 바이트</td><td><b>64</b></td><td>0 허용(익명 방문). 세션 안에서 유일해야 함</td></tr>
+<tr><td>serverPlanId 최대 바이트</td><td><b>64</b></td><td>0 = null</td></tr>
+<tr><td>동시 포털 수 (쌍당)</td><td><b>4</b></td><td>초과 시 포털 선택이 모호하므로 <code>PLAN_INVALID</code></td></tr>
+</tbody>
+</table>
+<p>1 MiB 상한과 필드별 상한은 <b>역할이 다르다.</b> 1 MiB은 전송 계층의 메모리 방어선(파싱 전 검사)이고, 필드별 상한은 v1 계약이다. 규약을 지킨 클라이언트가 만드는 패킷은 최악에도 34,988바이트로 1 MiB의 약 3.3%다. 34,988을 넘는 요청은 <b>제약을 위반한 요청</b>이므로 즉시 <code>INVALID_REQUEST</code>로 거절한다(길이를 신뢰하고 버퍼를 잡아서는 안 된다).</p>
+
+<h3>4.7 수신 검증 규칙 (오류 처리)</h3>
+<table>
+<thead><tr><th>상황</th><th>판정</th><th>처리</th></tr></thead>
+<tbody>
+<tr><td>손상/잘림: <code>totalPacketLength &lt; 12</code>, 누적 바이트 부족 후 연결 종료</td><td>프레임 손상</td><td>부분 처리 없이 연결 종료. 응답도 보내지 않는다(반쪽짜리 요청에 대한 판정은 신뢰성 저하)</td></tr>
+<tr><td>길이 초과: <code>totalPacketLength &gt; 1,048,576</code> 또는 필드별 상한 초과</td><td>프레임 손상 / <code>INVALID_REQUEST</code></td><td>할당 전에 거절</td></tr>
+<tr><td>본문 잘림: 어떤 필드에서든 남은 바이트 &lt; 필요 바이트</td><td><code>INVALID_REQUEST</code>(1)</td><td>커서 경계 밖 읽기를 시도하지 않는다</td></tr>
+<tr><td>정수 오버플로: <code>pathPolygonCount × 4</code>, <code>visitCount × 72</code></td><td><code>INVALID_REQUEST</code>(1)</td><td>unchecked 곱셈 금지. <b>개수 상한을 할당 전에</b> 검사하고 64비트로 계산한다</td></tr>
+<tr><td>문자열 위반: 길이 0(요청 버전), NUL 바이트 포함, 유효하지 않은 UTF-8</td><td><code>INVALID_REQUEST</code>(1)</td><td>부분 문자열을 잘라 사용하지 않는다</td></tr>
+<tr><td>헤더 위반: <code>opcode ≠ 0x04</code>, 또는 <code>subtype</code>가 0x10/0x11이 아님, 또는 <code>protocolVersion ≠ 1</code></td><td>위임 / 연결 종료 / <code>INVALID_REQUEST</code>(1)</td><td><code>opcode</code>가 <code>0x04</code>가 아니면 기존 0x02/0x04 경로로 위임. <code>opcode==0x04</code> 이고 <code>subtype</code>가 0x10/0x11이 <b>아니면</b> 기존 <code>0x04</code> <b>고정길이</b> 경로로 위임. <code>opcode==0x04, subtype==0x11</code> 이면 서버 포트는 요청만 수신하므로 <b>방향 위반 → 연결 종료(fail-closed)</b>. <code>protocolVersion ≠ 1</code> 은 <code>totalPacketLength</code> 가 신뢰 가능하므로 <b>프레임을 정확히 소비한 뒤</b> <code>INVALID_REQUEST</code>(1) 로 거절한다</td></tr>
+<tr><td>알 수 없는 코드: <code>decision ∉ {0,1,2,3}</code>, <code>reasonCode</code> 미할당</td><td>fail-closed</td><td>서버 방어 검사 + 클라이언트 방어 검사 모두 "승인 아님"으로 처리</td></tr>
+<tr><td>버전 불일치</td><td><code>RESYNC_REQUIRED</code>(5)</td><td><b>인덱스를 해석하지 않는다</b></td></tr>
+</tbody>
+</table>
+
+<h3>4.8 송수신 시퀀스</h3>
+<pre>Unity ShipAI                              RegionNode (기존 19100 공유 연결)
+  04 10 01 00 LLLLLLLL RRRRRRRR + 요청 본문 ───────▶
+                                      공유 디스패처가 (opcode, subtype) 로 분류
+                                      헤더 12B · 길이 · 버전 검사
+                                      본문 경계/오버플로/문자열 검사
+                                      navMeshVersion 일치 확인 (선행)
+                                      서버 navmesh 인접성 · 포털 검증
+                                      서버 무작위 포털 표본 + 기하 probe
+  04 11 01 00 LLLLLLLL RRRRRRRR + 응답 본문 ◀───────
+                                      (accepted 인 경우에만 승인 통로로 반영)</pre>
+<p>수신 클라이언트는 <code>requestId</code>와 <code>planSequence</code>가 요청과 일치하는지 확인하고, <code>decision == 0(accepted)</code>일 때만 승인 통로로 반영한다. 그 외 값은 모두 폐기다.</p>
+</section>
+
+<section>
+<h2>5. 검증 규칙</h2>
+<table>
+<thead><tr><th>단계</th><th>서버 검사</th><th>실패 처리</th></tr></thead>
+<tbody>
+<tr><td>0 · 헤더/프레이밍</td><td>opcode·subtype·version·<code>totalPacketLength</code> 범위, 누적 완전성</td><td>프레임 손상 → 연결 종료</td></tr>
+<tr><td>1 · 본문 바인딩</td><td>필드별 길이/범위/오버플로, 문자열 유효성, <code>pathPolygonCount</code>∈[2,4096], <code>visitCount</code>≤256, <code>planSequence&gt;0</code></td><td><code>INVALID_REQUEST</code></td></tr>
+<tr><td>2 · 요청 예산</td><td>세션 윈도 요청 수 상한</td><td><code>RATE_LIMITED</code></td></tr>
+<tr><td>3 · 순서/신선도</td><td>planSequence 역행·재전송, <code>clientComputedAtUtcMs</code> 노후, 미래 허용 오차 초과</td><td><code>STALE_SEQUENCE</code> / <code>INVALID_REQUEST</code></td></tr>
+<tr><td>4 · 시작점</td><td>서버 권위 선박 다각형과 <code>startPolygonIndex</code> 일치(허용 오차 내)</td><td><code>START_MISMATCH</code></td></tr>
+<tr><td>5 · 버전</td><td><code>navMeshVersion</code> 바이트 일치 — <b>인덱스 해석 이전에</b> 실행</td><td><code>RESYNC_REQUIRED</code></td></tr>
+<tr><td>6 · 인덱스 범위</td><td>각 <code>polygonIndex</code>가 서버 navmesh 테이블에 존재하는지</td><td><code>PLAN_INVALID</code></td></tr>
+<tr><td>7 · 통로 구조</td><td>끝점 일치, <b>연속 중복 압축 여부</b>, 인접 쌍마다 공유 포털 존재(비인접 점프 차단), 쌍당 포털 수 ≤ 4</td><td><code>PLAN_INVALID</code> / <code>PATH_DISCONTINUITY</code></td></tr>
+<tr><td>8 · 업프런트 예산</td><td><b>probe 1회도 호출하기 전에</b> 필요 표본 수를 합산해 예산과 비교</td><td><code>RATE_LIMITED</code></td></tr>
+<tr><td>9 · 무작위 기하 검사</td><td>서버 navmesh 기준으로 선택된 스텝의 공유 포털 내부와 다각형 내부를 일정 간격 샘플링. 각 샘플이 통행 가능 분류이고 폭(clearance)이 선박 빔+여유 이상인지 검사</td><td><code>OFF_MESH_SAMPLE</code> / <code>FORBIDDEN_REGION</code></td></tr>
+<tr><td>10 · 방문 계획</td><td>visit 다각형이 통행 가능하고, 통로에 존재하며, <code>order</code> 순서로 도달 순서가 비감소하는지</td><td><code>VISIT_UNREACHED</code> / <code>VISIT_ORDER_MISMATCH</code></td></tr>
+</tbody>
+</table>
+<p>단계 7은 이 규약의 <b>구조적 핵심</b>이다. 인접성 검사가 없으면 클라이언트는 "다각형 5 → 다각형 900"처럼 임의 점프를 넣어 육지를 가로지르는 통로를 지날 수 있고, 서버 무작위 probe는 그중 검사하지 않은 스텝을 그대로 통과한다. 인접 검사와 기하 검사는 <b>서버 CSPRNG로 선택된 최대 64개 고유 세그먼트에 대해 한 루프에서 함께 수행</b>되며, 전체 스텝을 결정론적으로 모두 순회하지 않는다. 표본에 포함되지 않은 세그먼트에는 <b>확률적 갭/재시도 리스크</b>가 존재하며, 이는 클라이언트 재요청(새 표본 추출)로 완화한다.</p>
+<p class="warn">단계 9의 샘플은 클라이언트 좌표가 아니라 <b>서버 navmesh 좌표</b>에서 계산된다. 표본 지점은 서버 CSPRNG가 고르며 응답에 노출되지 않는다.</p>
+</section>
+
+<section>
+<h2>6. 무작위 표본 정책</h2>
+<ul>
+<li>표본 단위는 <b>통로 스텝</b>(인접 다각형 한 쌍)이다. 가중치는 클라이언트가 아니라 <b>서버가 계산한</b> 다각형 중심 간 거리(길이 균등 밴드)로 주어, 긴 스텝에 더 많은 표본이 배정된다.</li>
+<li>기본 정책: <b>min(64, 세그먼트 수)</b>개의 고유 세그먼트를 Fisher-Yates 셔플로 비중복 추출한다. 세그먼트 수가 64 미만이면 전수 검사한다. 8개/20% 초안 정책은 적용하지 않는다.</li>
+<li>한 스텝이 여러 공유 포털을 가지면, 서버는 그중 하나를 무작위로 고르지 않고 <b>전 포털을</b> 검사한다. 모호함을 클라이언트에게 맡기지 않는다.</li>
+<li>선택된 스텝에서는 포털 선분을 최대 검증 간격 이내로 나눈 여러 내부 점 + 양끝점, 그리고 두 다각형 내부로 이어지는 구간의 점을 검사한다(비볼록·오염된 다각형 방어).</li>
+<li>해안선, 협수로, navmesh 경계, 큰 방향 변화는 위험 점수를 높여 추가 표본을 배정한다(별도 과제, 이번은 길이 가중만).</li>
+<li>표본 수, 샘플 간격, 허용 폭, 위험 가중치는 서버 설정 및 navmesh 버전에 귀속시켜 감사 로그에 기록한다.</li>
+<li>반복 요청에서 표본을 조금씩 바꿔 우회하는 행위를 줄이도록 동일 plan 지문에 대한 검증 결과를 캐시하고 재요청 비용을 제한한다.</li>
+</ul>
+<p class="warn">신뢰 구간(신뢰 경로 섹션)은 표본으로 추출되며 전체 경로 인접성을 결정론적으로 순회하지 않는다. 표본에 포함되지 않은 세그먼트에는 <b>확률적 갭/재시도 리스크</b>가 존재한다. 실제 표본 수와 간격은 map 해상도, 선박 빔, 업데이트 빈도 및 서버 부하 측정 후 확정한다. 위 값은 시작점이지 안전 보증값이 아니다.</p>
+</section>
+
+<section>
+<h2>7. 클라이언트 매핑</h2>
+<p>현재 ShipAI는 <code>GeoNavPathResult.Path</code>로 순서 있는 waypoint를 제공한다. 클라이언트는 <b>waypoint 좌표</b>를 서버에 보내지 않고, 자기 navmesh에서 <b>통과한 다각형 인덱스</b>만 순서대로 보낸다. 네트워크 표현은 버전 고정된 바이너리 계약에 직접 매핑하며 JSON DTO를 거치지 않는다.</p>
+<table>
+<thead><tr><th>ShipAI 데이터</th><th>와이어 필드</th><th>주의</th></tr></thead>
+<tbody>
+<tr><td>navmesh에서 통과한 다각형 순서</td><td><code>pathPolygonIndex[]</code> (int32)</td><td><b>연속 중복을 압축</b>하고 압축 후 길이를 <code>pathPolygonCount</code>로 보낸다.</td></tr>
+<tr><td>출발/목적지 waypoint가 속한 다각형</td><td><code>startPolygonIndex</code>, <code>destinationPolygonIndex</code></td><td>클라이언트 navmesh 기준 번호. 서버는 자기 테이블로 재확인한다.</td></tr>
+<tr><td>방문 목표 계획</td><td><code>visits[]</code> (polygonIndex + order)</td><td>서버가 도달·순서를 재검증한다.</td></tr>
+<tr><td>좌표 (경도/위도 등)</td><td><b>전송하지 않음</b></td><td>기하는 서버 navmesh가 소유하며, 좌표는 본문에 포함되지 않는다.</td></tr>
+<tr><td>navmesh 버전</td><td><code>navMeshVersion</code></td><td>클라이언트 애셋의 불변 콘텐츠 버전. 인덱스 해석의 전제.</td></tr>
+<tr><td>Found, Corridor, Visited*, SnapUsed, 거리</td><td><b>전송하지 않음</b></td><td>클라이언트 자체 판정/진단값은 신뢰하지 않는다. 서버가 계산·기록한다.</td></tr>
+</tbody>
+</table>
+<p>클라이언트에서 endpoint snap이 발생했더라도 서버에서 동일하게 허용된다는 뜻이 아니다. 서버는 <code>startPolygonIndex</code>가 <b>서버 권위 선박 다각형</b>과 일치하는지 별도로 검증하고, 다르면 <code>START_MISMATCH</code>로 거절한다.</p>
+</section>
+
+<section>
+<h2>7.1 좌표계 규약 (server global ↔ navmesh) — 확정/미확정 분리</h2>
+<p>이 절은 서버 권위 좌표와 클라이언트 navmesh 좌표의 관계를 <b>확정된 것과 미확정인 것</b>으로 나눠 기록한다. 검증 로직은 다각형 인덱스만 다루므로 <b>어떤 좌표도 wire 에 실리지 않는다</b>(7장 클라이언트 매핑). 좌표는 서버 navmesh 내부에만 존재한다.</p>
+<ul>
+<li><b>확정 — 서버 글로벌 좌표.</b> <code>NWO_RegionNode/MoveMent.cs</code>의 <code>MoveMent.globalPosition</code>은 <code>nwo_Vector3</code>(<code>Int32 X, Int32 Y, Int32 Z</code>) 기반의 <b>대형 정수 XYZ</b> 좌표다. 실사용 범위/정밀도는 저장소에 정의되어 있지 않다.</li>
+<li><b>확정 — 타일 나누기.</b> 같은 생성자에서 <code>tilePosition = (X/2560, Z/2560)</code>, <code>position = (X/2560, Y, Z/2560)</code>로 <b>X/Z 를 정수 2560 으로 나눈다</b>. 즉 서버가 사용하는 타일 좌표 단위는 <b>2560 좌표 단위(tile divisor 2560)</b>이며, 이 <b>2560</b>이 서버 측에서 확정된 유일한 수치다. 2560 의 물리적 의미(미터/센티미터/기타)는 저장소에 명시가 없다.</li>
+<li><b>확정 — EchoServerHandler 잔여 스케일.</b> 같은 핸들러에서 타일 연산 후 좌표에 <b>×10</b>을 곱해 전달한다(<code>position * 10</code>). 이 10배 스케일이 서버 측 파이프라인에서 확정된 마지막 승수다.</li>
+<li><b>미확정 — 대형 월드 전체의 스케일 크기.</b> 서버 저장소에서 확정된 것은 <b>타일 나누기 수치 2560 과 그 좌표 단위</b>뿐이다. 월드의 총 길이나 전역 축척(world scale)을 이 2560으로부터 환산해 <b>확정하지 않는다</b>. 알려진 것은 2560 좌표 단위까지다.</li>
+<li><b>확정(구조) — 클라이언트 변환 표면.</b> 클라이언트 <code>ShipAI</code>는 <code>GeoNavMapTransform</code>/<code>NavMeshJsonRenderer</code> 를 통해 <b>스케일 적응된 대형 좌표</b>를 렌더링하고, 변환 파라미터 <code>centerPivot</code>, <code>worldScale</code>, <code>invertZ</code> 는 <b>구성 가능(configurable)</b>하게 노출된다. navmesh JSON(<code>format navmesh-merged-convex</code>, 정점 <code>[x, y]</code> with <code>y down</code>, <code>polygons</code>/<code>portals</code>/<code>centroids</code> 포함)이 선언하는 메타데이터는 <b>입력 계약</b>일 뿐 서버-클라이언트 스케일 대응을 증명하지 않는다.</li>
+<li><b>미확정 — 원점·축/부호·스케일 대응.</b> 서버 글로벌 X/Y/Z 와 navmesh 로컬 좌표 사이의 <b>원점(origin)</b>, <b>축 매핑과 부호</b>(<code>invertZ</code>, y-down vs Z-up), <b>스케일 비율</b>은 <b>서버 저장소 코드에서 확정되어 있지 않다</b>(클라이언트 애셋은 서버 저장소 밖의 별도 체크아웃에 있다). 확정하려면 <b>실제 클라이언트 변환 소스</b>(<code>GeoNavMapTransform</code>/<code>NavMeshJsonRenderer</code>의 실제 <code>centerPivot</code>/<code>worldScale</code>/<code>invertZ</code> 값)와 <b>서버 좌표 소스</b>(<code>MoveMent.globalPosition</code> 및 실제 클라이언트 송신 좌표)를 <b>대조 캘리브레이션</b>해야 한다. 그 전까지는 <b>미해결/구성 가능</b> 항목으로 취급한다.</li>
+<li><b>비권위 가정 금지.</b> navmesh JSON 이나 화면상의 격자/타일 개수로 <code>worldScale</code> 을 역산해 <b>확정하지 않는다</b>. 서버-클라이언트 좌표 대응은 반드시 <b>명시적 구성/캘리브레이션 파라미터</b>로 다뤄야 하며, 저장소 코드가 이를 정의하지 않는 한 특정 수치를 확정하지 않는다.</li>
+<li><b>권위 소스.</b> <code>navmesh.json</code> 은 <b>서버가 다각형/포털 기하를 읽어들이는 소스</b>이며, 서버가 그 기하를 <b>소유</b>한다. 클라이언트는 <b>통과한 다각형 인덱스만</b> 순서대로 보내며 기하를 전송하지 않는다. 클라이언트가 보낸 어떤 수치도 좌표 근거로 사용하지 않는다.</li>
+</ul>
+<p class="warn">좌표 변환(서버 글로벌 XZ ↔ navmesh 로컬)의 비율·원점·축 부호는 <b>실제 클라이언트 변환(<code>GeoNavMapTransform</code>/<code>NavMeshJsonRenderer</code>)과 서버 좌표 소스(<code>MoveMent.cs</code>)를 기준으로 캘리브레이션</b>해 확정한다. 확정 전까지 <code>IAuthoritativeNavMesh</code>의 <code>Classify</code>/<code>LocatePolygon</code> 에 들어가는 nav 좌표의 절대 스케일은 <b>미해결</b>이며, 검증 로직은 <b>nav 좌표 한계 안에서 상대적으로만</b> 동작한다(비율·스텝 길이·통행 폭 임계값은 navmesh 빌드와 캘리브레이션 확정 후에 확정한다).</p>
+</section>
+
+<section>
+<h2>8. 서버 코드 반영 구조 및 개발 계획</h2>
+<table>
+<thead><tr><th>추가/수정 위치</th><th>역할</th></tr></thead>
+<tbody>
+<tr><td><code>Program.RunServerAsync</code></td><td>기존 TCP <b>19100 파이프라인에</b> mixed-protocol 프레이머/디스패처를 <code>"echo"</code> <b>앞에</b> 추가한다(별도 포트·별도 리스너 없음). <code>(opcode, subtype)</code>를 먼저 검사하여 0x04/0x10 요청과 0x04/0x11 응답은 경로 프레이밍으로, 0x02 및 0x04의 그 밖 서브타입은 기존 고정길이 라우팅으로 <b>정확히 소비</b>하여 위임. 기존 핸들러의 레이아웃은 변경하지 않되, 스트림 소비 규칙을 명확히 한다.</td></tr>
+<tr><td><code>AI_Work/PathProtocol/</code></td><td>바이너리 계약 상수, 코덱(디코더/인코더), 헤더·길이 명세, 계약 fixture 및 golden packet 관리</td></tr>
+<tr><td><code>AI_Work/PathValidation/</code></td><td>navmesh 권위 계약, 인접성/포털 조회, 무작위 sampler, 스텝/visit validator</td></tr>
+<tr><td><code>User</code></td><td>선박별 직전 planSequence, 윈도 요청 수, 서버 권위 다각형, 승인된 plan 식별자 보관 (검토 후 결정)</td></tr>
+<tr><td><code>EchoServerHandler.cs</code></td><td><b>변경 없음.</b> 내부 opcode/서브타입 분기와 고정 오프셋 읽기는 그대로 둔다. 공유 디스패처가 0x04/0x10·0x04/0x11을 경로 검증 로직으로, 0x02 및 0x04의 그 밖 서브타입을 이 핸들러로 정확히 소비해 위임하므로 새 경로 프레임이 이 핸들러의 오프셋 판독에 노출되지 않는다. 다만 이 핸들러는 <code>readerIndex</code>를 전진시키지도 수신 <code>IByteBuffer</code>를 해제하지도 않으므로, <b>슬라이스 소비/해제 규칙 확립은 별도 과제로 남긴다</b>(이번 범위 밖).</td></tr>
+</tbody>
+</table>
+<p>문서 경로는 <code>NWO_RegionNode/AI_Work</code>로 고정한다.</p>
+<h3>개발 단계</h3>
+<table>
+<thead><tr><th>단계</th><th>산출물</th><th>완료 기준</th></tr></thead>
+<tbody>
+<tr><td>0 · 정책 결정</td><td>navmesh 버전 방식, 다각형 인덱스 정의(정렬 규칙), 통행 의미, 방문 반경, 폭/빔, 표본·부하 예산</td><td>클라이언트·서버가 같은 인덱스·버전 규약 합의</td></tr>
+<tr><td>1 · 계약 고정</td><td>바이너리 필드 순서·크기·상한, 결정/사유 수치 맵, 오류 매핑, <b>golden packet fixture</b></td><td>클라이언트와 서버가 같은 바이트열 fixture로 왕복 검증</td></tr>
+<tr><td>2 · 서버 기하 검증</td><td>인덱스 범위, 인접성/포털 조회, 포털 폭·분류 검사, visit 순서</td><td>비인접 점프·좁은 포털·방문 순서 뒤집힘에서 판정 일치</td></tr>
+<tr><td>3 · 무작위 검증기</td><td>암호학적 난수 또는 서버 비밀 기반 표본 선택, 위험 가중 정책</td><td>같은 plan의 감사 가능성, 클라이언트가 표본을 예측하지 못함</td></tr>
+<tr><td>4 · 세션 API 연결</td><td>인증, rate limit, sequence/replay 방지, 서버 plan 저장</td><td>중복·지연·위조 요청이 안전하게 거절/멱등 처리</td></tr>
+<tr><td>5 · ShipAI 통합</td><td>다각형 인덱스 추출기(중복 압축), navMeshVersion 전달, 수락 결과 반영</td><td>서버가 승인한 통로만 authoritative 이동 계획으로 사용</td></tr>
+<tr><td>6 · 운영 전개</td><td>메트릭, 구조화 로그, shadow mode, 점진 적용/롤백 설정</td><td>오탐·지연·비용 기준 달성 후 강제 판정 활성화</td></tr>
+</tbody>
+</table>
+<h3>필수 확인 항목</h3>
+<ul>
+<li>정상 통로, 비인접 점프(5→900), 다각형 연속 중복 미압축, 인덱스 범위 초과/음수, 구버전 navMeshVersion, 반복 sequence.</li>
+<li>좁은 포털(선박 빔보다 좁음), 경계 위 포털, navmesh 경계/seam, 공유 포털이 여러 개인 인접 쌍.</li>
+<li><code>totalPacketLength</code> 잘림/0/초과/최대값, 본문 정확히 <code>totalPacketLength-12</code> 미만·초과, 문자열 NUL 바이트·잘못된 UTF-8.</li>
+<li><code>pathPolygonCount</code> 극단값에서 오버플로·과다 할당 없음, <code>visitCount</code> 0과 256.</li>
+<li>표본 seed 고정 시 재현성, 서버 navmesh 배포와 클라이언트 애셋 버전 불일치.</li>
+</ul>
+</section>
+
+<section>
+<h2>9. 보안 및 구현 주의</h2>
+<ul>
+<li><b>클라이언트 <code>polygonIndex</code>는 증거가 아니다.</b> 정수 몇 개로는 통행 가능성을 증명할 수 없다. 서버는 자기 navmesh에서 인접성·포털 폭·통행 분류를 다시 계산한다.</li>
+<li><b>인덱스는 <code>navMeshVersion</code> 안에서만 의미를 가진다.</b> 버전 검증을 인덱스 해석보다 먼저 수행하고, 불일치 시 인덱스를 아예 해석하지 않는다.</li>
+<li><code>shipId</code>는 본문에서 받지 않는다. 인증된 세션에서 서버가 결정한다. 요청 필드를 권한 증명으로 쓰지 않는다.</li>
+<li>검증은 navmesh 버전과 이동 규칙 버전으로 고정해 나중에 같은 결과를 재현한다.</li>
+<li>실패 상세 지점이나 비밀 표본 인덱스를 클라이언트에 돌려주면 공격자가 다음 요청을 조정할 수 있으므로 일반 응답에는 <code>decision</code>/<code>reasonCode</code>만 제공한다.</li>
+<li>요청 본문은 <b>전부 클라이언트 제어 입력</b>이다. 길이·개수·버전 검증은 할당과 인덱싱 <b>이전에</b> 끝나야 한다.</li>
+<li>검증 대기 중 선박 위치가 변할 수 있으므로 sequence 및 서버 위치 시각 기준을 명시하고 만료 계획은 다시 제출하게 한다.</li>
+<li>통행 가능성 판정은 경로가 물리적으로 안전하거나 실제 선박 제어기가 그 경로를 따를 수 있음을 뜻하지 않는다. 충돌 회피와 동적 장애물은 별도 계층이다.</li>
+</ul>
+</section>
+
+<footer>
+문서 위치: <code>NWO_RegionNode/AI_Work/ShipAI_ServerPathValidation_Plan.html</code> ·
+구현 차이안: <code>ShipAI_ServerPathValidation_Implementation_Diff.html</code> ·
+기준 코드 확인: <code>C:\GitHub\NWO_CUDA_RegionNode\NWO_RegionNode</code> ·
+<strong>적용 상태: 본 문서는 설계 규약이며 서버 소스에 반영되지 않았다. 빌드·테스트 미실행.</strong>
+</footer>
+</main></body></html>

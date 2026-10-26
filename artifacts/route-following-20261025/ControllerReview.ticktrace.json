@@ -1,0 +1,464 @@
+{
+  "terrainCoordinateInterpretation": "Observed callback arguments only. Terrain.terrainCollision subtracts fixed offsets before selecting an external bitmap; harness callbacks are recorded but world-origin meaning is not established.",
+  "ticks": [
+    {
+      "scenario": "tiny-legs",
+      "tick": 1,
+      "before": {},
+      "actualPosition": [
+        40,
+        0
+      ],
+      "heading": 192,
+      "routeActive": true,
+      "crossTrack": 0,
+      "terrainCallbackArguments": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 5,
+          "y": 0
+        },
+        {
+          "x": 10,
+          "y": 0
+        },
+        {
+          "x": 15,
+          "y": 0
+        },
+        {
+          "x": 20,
+          "y": 0
+        },
+        {
+          "x": 25,
+          "y": 0
+        },
+        {
+          "x": 30,
+          "y": 0
+        },
+        {
+          "x": 35,
+          "y": 0
+        },
+        {
+          "x": 40,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "scenario": "tiny-legs",
+      "tick": 2,
+      "before": {},
+      "actualPosition": [
+        80,
+        0
+      ],
+      "heading": 192,
+      "routeActive": true,
+      "crossTrack": 0,
+      "terrainCallbackArguments": [
+        {
+          "x": 40,
+          "y": 0
+        },
+        {
+          "x": 45,
+          "y": 0
+        },
+        {
+          "x": 50,
+          "y": 0
+        },
+        {
+          "x": 55,
+          "y": 0
+        },
+        {
+          "x": 60,
+          "y": 0
+        },
+        {
+          "x": 65,
+          "y": 0
+        },
+        {
+          "x": 70,
+          "y": 0
+        },
+        {
+          "x": 75,
+          "y": 0
+        },
+        {
+          "x": 80,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "scenario": "tiny-legs",
+      "tick": 3,
+      "before": {},
+      "actualPosition": [
+        120,
+        0
+      ],
+      "heading": 192,
+      "routeActive": true,
+      "crossTrack": 0,
+      "terrainCallbackArguments": [
+        {
+          "x": 80,
+          "y": 0
+        },
+        {
+          "x": 85,
+          "y": 0
+        },
+        {
+          "x": 90,
+          "y": 0
+        },
+        {
+          "x": 95,
+          "y": 0
+        },
+        {
+          "x": 100,
+          "y": 0
+        },
+        {
+          "x": 105,
+          "y": 0
+        },
+        {
+          "x": 110,
+          "y": 0
+        },
+        {
+          "x": 115,
+          "y": 0
+        },
+        {
+          "x": 120,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "scenario": "tiny-legs",
+      "tick": 4,
+      "before": {},
+      "actualPosition": [
+        128,
+        -32
+      ],
+      "heading": 0,
+      "routeActive": true,
+      "crossTrack": 0,
+      "terrainCallbackArguments": [
+        {
+          "x": 120,
+          "y": 0
+        },
+        {
+          "x": 124,
+          "y": 0
+        },
+        {
+          "x": 128,
+          "y": 0
+        },
+        {
+          "x": 128,
+          "y": 0
+        },
+        {
+          "x": 128,
+          "y": 4
+        },
+        {
+          "x": 128,
+          "y": 9
+        },
+        {
+          "x": 128,
+          "y": 13
+        },
+        {
+          "x": 128,
+          "y": 18
+        },
+        {
+          "x": 128,
+          "y": 22
+        },
+        {
+          "x": 128,
+          "y": 27
+        },
+        {
+          "x": 128,
+          "y": 31
+        }
+      ]
+    },
+    {
+      "scenario": "tiny-legs",
+      "tick": 5,
+      "before": {},
+      "actualPosition": [
+        128,
+        -72
+      ],
+      "heading": 0,
+      "routeActive": true,
+      "crossTrack": 0,
+      "terrainCallbackArguments": [
+        {
+          "x": 128,
+          "y": 31
+        },
+        {
+          "x": 128,
+          "y": 36
+        },
+        {
+          "x": 128,
+          "y": 41
+        },
+        {
+          "x": 128,
+          "y": 46
+        },
+        {
+          "x": 128,
+          "y": 51
+        },
+        {
+          "x": 128,
+          "y": 56
+        },
+        {
+          "x": 128,
+          "y": 61
+        },
+        {
+          "x": 128,
+          "y": 66
+        },
+        {
+          "x": 128,
+          "y": 71
+        }
+      ]
+    },
+    {
+      "scenario": "tiny-legs",
+      "tick": 6,
+      "before": {},
+      "actualPosition": [
+        128,
+        -112
+      ],
+      "heading": 0,
+      "routeActive": true,
+      "crossTrack": 0,
+      "terrainCallbackArguments": [
+        {
+          "x": 128,
+          "y": 71
+        },
+        {
+          "x": 128,
+          "y": 76
+        },
+        {
+          "x": 128,
+          "y": 81
+        },
+        {
+          "x": 128,
+          "y": 86
+        },
+        {
+          "x": 128,
+          "y": 91
+        },
+        {
+          "x": 128,
+          "y": 96
+        },
+        {
+          "x": 128,
+          "y": 101
+        },
+        {
+          "x": 128,
+          "y": 106
+        },
+        {
+          "x": 128,
+          "y": 111
+        }
+      ]
+    },
+    {
+      "scenario": "tiny-legs",
+      "tick": 7,
+      "before": {},
+      "actualPosition": [
+        128,
+        -152
+      ],
+      "heading": 0,
+      "routeActive": false,
+      "crossTrack": null,
+      "terrainCallbackArguments": [
+        {
+          "x": 128,
+          "y": 111
+        },
+        {
+          "x": 128,
+          "y": 115
+        },
+        {
+          "x": 128,
+          "y": 120
+        },
+        {
+          "x": 128,
+          "y": 124
+        },
+        {
+          "x": 128,
+          "y": 128
+        },
+        {
+          "x": 128,
+          "y": 132
+        },
+        {
+          "x": 128,
+          "y": 137
+        },
+        {
+          "x": 128,
+          "y": 142
+        },
+        {
+          "x": 128,
+          "y": 147
+        },
+        {
+          "x": 128,
+          "y": 151
+        }
+      ]
+    },
+    {
+      "scenario": "terrain-transaction",
+      "before": {},
+      "actualPosition": [
+        0,
+        0
+      ],
+      "heading": 128,
+      "routeActive": true,
+      "terrainCallbackArguments": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "scenario": "translated-origin",
+      "actualPosition": [
+        42000,
+        -88040
+      ],
+      "heading": 0,
+      "routeActive": true,
+      "terrainCallbackArguments": [
+        {
+          "x": 42000,
+          "y": 88000
+        },
+        {
+          "x": 42000,
+          "y": 88005
+        },
+        {
+          "x": 42000,
+          "y": 88010
+        },
+        {
+          "x": 42000,
+          "y": 88015
+        },
+        {
+          "x": 42000,
+          "y": 88020
+        },
+        {
+          "x": 42000,
+          "y": 88025
+        },
+        {
+          "x": 42000,
+          "y": 88030
+        },
+        {
+          "x": 42000,
+          "y": 88035
+        },
+        {
+          "x": 42000,
+          "y": 88040
+        }
+      ]
+    },
+    {
+      "scenario": "pause-resume",
+      "pausedAt": [
+        0,
+        -40
+      ],
+      "actualPosition": [
+        0,
+        -160
+      ],
+      "heading": 0,
+      "routeActive": true
+    },
+    {
+      "scenario": "external-position-change",
+      "before": [
+        500,
+        340
+      ],
+      "actualPosition": [
+        500,
+        340
+      ],
+      "routeActive": false
+    },
+    {
+      "scenario": "dateline-unwrapped",
+      "actualPosition": [
+        40,
+        0
+      ],
+      "heading": 192,
+      "routeActive": true
+    }
+  ]
+}

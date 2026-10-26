@@ -2,6 +2,7 @@
 using DotNetty.Transport.Bootstrapping;
 using DotNetty.Transport.Channels;
 using DotNetty.Transport.Channels.Sockets;
+using NWO_RegionNode.PathValidation;
 using System.Drawing;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -47,12 +48,14 @@ namespace NWO_RegionNode
 
         static public Dictionary<UInt32, User> userTable = new Dictionary<UInt32, User>();
         static public Dictionary<UInt32, MoveMent> moveMentTable = new Dictionary<UInt32, MoveMent>();
+        static public AutopilotController? Autopilot { get; set; }
 
         float4[] userPositionBuffer = new float4[MAX_USER];
         float4[] objectPositionBuffer = new float4[MAX_OBJECT];
 
         //관성항법 동기화 주기 카운터
         static int NetWorkRoutine = 0;
+        static int movementTickInProgress = 0;
 
 
         static void Main(string[] args)
@@ -112,7 +115,7 @@ namespace NWO_RegionNode
             userLockStepTimer.Enabled = true;
 
             //오브젝트 락스텝 동기화 루프
-            System.Timers.Timer moveMentLockStepTimer = new System.Timers.Timer(400);
+            System.Timers.Timer moveMentLockStepTimer = new System.Timers.Timer(LockstepMovement.TickMilliseconds);
             moveMentLockStepTimer.Elapsed += moveMentLockStep;
             moveMentLockStepTimer.AutoReset = true;
             moveMentLockStepTimer.Enabled = true;
@@ -294,142 +297,90 @@ namespace NWO_RegionNode
         //오브젝트 락스텝 처리
         static void moveMentLockStep(Object source, ElapsedEventArgs e)
         {
-            //이동,회전 처리
-            foreach (var NetMoveMentData in Program.moveMentTable)
-            {
-                NetMoveMentData.Value.rot = (byte)((MathR.MoveTowardsAngle(NetMoveMentData.Value.rot, NetMoveMentData.Value.targetAngle, 4)+256)%256);
-
-                float maxH = float.MinValue;
-
-                float rad = (float)NetMoveMentData.Value.rot * 1.406f * MathF.PI / 180f;
-                float dirX = MathF.Sin(rad);
-                float dirZ = MathF.Cos(rad);
-
-                for (int d = 5; d <= 100; d += 10)
-                {
-                    MoveMent.nwo_Vector3 pos =
-                        NetMoveMentData.Value.globalPosition +
-                        new MoveMent.nwo_Vector3(
-                            (int)(dirX * -d),
-                            0,
-                            (int)(dirZ * -d)
-                        );
-
-                    float h = Terrain.terrainCollision(pos.X, -pos.Z);
-
-                    if (h > maxH)
-                        maxH = h;
-                }
-
-                // 최종 최대 높이
-                float resultH = maxH;
-
-
-                if (maxH < 0.5f)
-                {
-                    float acceleration = 0.5f;
-                    float deceleration = 5f;
-                    acceleration = NetMoveMentData.Value.speed <= NetMoveMentData.Value.targetspeed ? acceleration : deceleration;
-                    NetMoveMentData.Value.speed = (float)MathR.MoveTowards(NetMoveMentData.Value.speed, NetMoveMentData.Value.targetspeed, acceleration);
-                    NetMoveMentData.Value.globalPosition = NetMoveMentData.Value.globalPosition + new MoveMent.nwo_Vector3((int)(MathF.Sin((float)NetMoveMentData.Value.rot * 1.4f * MathF.PI / 180) * NetMoveMentData.Value.speed * -400 / 1000), 0, (int)(MathF.Cos((float)NetMoveMentData.Value.rot * 1.4f * MathF.PI / 180) * NetMoveMentData.Value.speed * -400 / 1000));
-                }
-                else
-                {
-                    NetMoveMentData.Value.targetspeed = 0;
-                    NetMoveMentData.Value.speed = -1;
-                }
-                
-                float Angle = (byte)MathR.MoveTowardsAngle(NetMoveMentData.Value.rot, NetMoveMentData.Value.targetAngle, 35);
-            }
-
-
-            //위치정보 동기화
-
-            /*
-            *최소주기 기준인0.5s로 설정됨
-            */
-
-            //cuda로 데이터 적재
-
-            //vram등록
-            //cudaMemCopy(userTable.Select(o => new float4(o.Value.tilePosition.X, o.Value.tilePosition.Y, o.Value.position.X, o.Value.position.Z)).ToArray(), userTable.Count);
-            //결과버퍼
+            if (Interlocked.Exchange(ref movementTickInProgress, 1) != 0) return;
             try
             {
-                //vram등록
-                cudaMoveMentMemCopy(moveMentTable.Select(o => new float4(o.Value.tilePosition.X, o.Value.tilePosition.Y, o.Value.position.X, o.Value.position.Z)).ToArray(), moveMentTable.Count);
-                //결과버퍼
-                float[] c = new float[moveMentTable.Count];
-
-                if (moveMentTable.Count == 0)
-                    return;
-                foreach (var broadcastUserData in Program.userTable)
+                try
                 {
-                    int DataCount = 0;
-
-                    //cuda 연산 결과
-                    IntPtr resultPtr = cudaMoveMentDisFilter(c, new float4(broadcastUserData.Value.tilePosition.X, broadcastUserData.Value.tilePosition.Y, broadcastUserData.Value.position.X, broadcastUserData.Value.position.Z), moveMentTable.Count);
-
-
-                    //헤더 구성
-                    List<byte> packet = new List<byte> { 0x04, 0x01 };
-
-                    //수신 유저id 등록
-                    packet.AddRange(System.BitConverter.GetBytes((UInt32)broadcastUserData.Value.id));
-
-                    //cpu 브로드케스트
-                    foreach (var NetMoveMentData in Program.moveMentTable)
+                    cudaMoveMentMemCopy(moveMentTable.Select(o => new float4(o.Value.tilePosition.X, o.Value.tilePosition.Y, o.Value.position.X, o.Value.position.Z)).ToArray(), moveMentTable.Count);
+                    float[] c = new float[moveMentTable.Count];
+                    if (moveMentTable.Count == 0)
+                        return;
+                    foreach (var broadcastUserData in Program.userTable)
                     {
-                        //본인 제외
-                        //if(NetUserData.Key!=broadcastUserData.Key)
-                        {
-                            //거리 비교
-                            //if (DistanceSquared(NetUserData.Value.tilePosition, NetUserData.Value.tilePosition) < 2 && DistanceSquared(NetUserData.Value.position) < 200)
-
-                            //오브젝트넘버 구성
-                            packet.AddRange(System.BitConverter.GetBytes((Int32)NetMoveMentData.Key));
-
-                            //Console.WriteLine(NetUserData.Value.tilePosition + "," + NetUserData.Value.position);
-
-                            //위치데이터 구성
-                            packet.AddRange(System.BitConverter.GetBytes((Int32)NetMoveMentData.Value.globalPosition.X));
-                            packet.AddRange(System.BitConverter.GetBytes((Int16)NetMoveMentData.Value.globalPosition.Y));
-                            packet.AddRange(System.BitConverter.GetBytes((Int32)NetMoveMentData.Value.globalPosition.Z));
-
-                            //속도데이터 구성
-                            packet.AddRange(System.BitConverter.GetBytes((Int16)NetMoveMentData.Value.speed));
-
-                            //각도 구성
-                            packet.Add(NetMoveMentData.Value.rot);
-
-
-                            DataCount++;
-                        }
+                        cudaMoveMentDisFilter(c, new float4(broadcastUserData.Value.tilePosition.X, broadcastUserData.Value.tilePosition.Y, broadcastUserData.Value.position.X, broadcastUserData.Value.position.Z), moveMentTable.Count);
                     }
 
-                    //cuda브로드케스트
-                    //cuda 연산,결과
-                    //IntPtr resultPtr = exportCppFunctionAdd(c, new float4(broadcastUserData.Value.tilePosition.X, broadcastUserData.Value.tilePosition.Y, broadcastUserData.Value.position.X, broadcastUserData.Value.position.Z), userTable.Count);
-
-                    //오브젝트 데이터 개수를 보냄
-                    packet.InsertRange(6, System.BitConverter.GetBytes((Int16)DataCount));
-
-                    if (DataCount > 0)
-                    {
-                        //송신
-                        broadcastUserData.Value.IChannel.WriteAndFlushAsync(Unpooled.CopiedBuffer(packet.ToArray()));
-                    }
+                    AdvanceAndBroadcastMovement(
+                        Autopilot,
+                        moveMentTable.Values,
+                        Terrain.terrainCollision,
+                        userTable.Values,
+                        SendMovementSnapshot);
+                }
+                finally
+                {
+                    cudaMoveMentMemFree();
                 }
             }
             finally
             {
-                //vram 해제
-                cudaMoveMentMemFree();
+                Interlocked.Exchange(ref movementTickInProgress, 0);
             }
+        }
+
+        /// <summary>Advances authoritative movement and broadcasts its production snapshots to each recipient.</summary>
+        public static void AdvanceAndBroadcastMovement(
+            AutopilotController? autopilot,
+            IEnumerable<MoveMent> movements,
+            Func<int, int, float> terrainHeight,
+            IEnumerable<User> recipients,
+            Action<IChannelHandlerContext, byte[]> send)
+        {
+            if (movements == null) throw new ArgumentNullException(nameof(movements));
+            if (terrainHeight == null) throw new ArgumentNullException(nameof(terrainHeight));
+            if (recipients == null) throw new ArgumentNullException(nameof(recipients));
+            if (send == null) throw new ArgumentNullException(nameof(send));
+
+            MoveMent[] movementSnapshot = movements.ToArray();
+            LockstepMovement.AdvanceTick(autopilot, movementSnapshot, terrainHeight);
+            foreach (User recipient in recipients)
+            {
+                if (recipient?.IChannel?.Channel == null || movementSnapshot.Length == 0) continue;
+                send(recipient.IChannel, SerializeMovementSnapshot(recipient.id, movementSnapshot));
+            }
+        }
+
+        /// <summary>Serializes one 0x04/0x01 production object snapshot for a recipient.</summary>
+        public static byte[] SerializeMovementSnapshot(uint recipientId, IReadOnlyCollection<MoveMent> movements)
+        {
+            if (movements == null) throw new ArgumentNullException(nameof(movements));
+
+            List<byte> packet = new List<byte> { 0x04, 0x01 };
+            packet.AddRange(BitConverter.GetBytes(recipientId));
+            packet.InsertRange(6, BitConverter.GetBytes((short)movements.Count));
+            foreach (MoveMent movement in movements)
+            {
+                packet.AddRange(BitConverter.GetBytes(unchecked((int)movement.id)));
+                packet.AddRange(BitConverter.GetBytes(movement.globalPosition.X));
+                packet.AddRange(BitConverter.GetBytes(unchecked((short)movement.globalPosition.Y)));
+                packet.AddRange(BitConverter.GetBytes(movement.globalPosition.Z));
+                packet.AddRange(BitConverter.GetBytes(unchecked((short)movement.speed)));
+                packet.Add(movement.rot);
+            }
+            return packet.ToArray();
+        }
+
+        public static void SendMovementSnapshot(IChannelHandlerContext recipient, byte[] packet)
+        {
+            recipient.WriteAndFlushAsync(Unpooled.CopiedBuffer(packet));
         }
 
         static async Task RunServerAsync()
         {
+
+            var navMeshResolution = InitializeNavigation();
+            Console.WriteLine($"[navigation] provider={navMeshResolution.Source}, failClosed={navMeshResolution.FailClosed}, detail={navMeshResolution.Detail}");
 
             var bossGroup = new MultithreadEventLoopGroup(1);
             var workerGroup = new MultithreadEventLoopGroup();
@@ -445,7 +396,7 @@ namespace NWO_RegionNode
                     {
                         IChannelPipeline pipeline = channel.Pipeline;
 
-                        pipeline.AddLast("echo", new EchoServerHandler());
+                        ConfigureClientPipeline(pipeline, navMeshResolution.Provider, Autopilot!);
                     }));
 
                 IChannel bootstrapChannel = await bootstrap.BindAsync(19100);
@@ -489,6 +440,25 @@ namespace NWO_RegionNode
                     bossGroup.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(1)),
                     workerGroup.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(1)));
             }
+        }
+
+        /// <summary>Builds the production inbound pipeline; kept public for startup-path tests.</summary>
+        public static void ConfigureClientPipeline(IChannelPipeline pipeline, IAuthoritativeNavMeshProvider provider, AutopilotController autopilot)
+        {
+            if (pipeline == null) throw new ArgumentNullException(nameof(pipeline));
+            if (provider == null) throw new ArgumentNullException(nameof(provider));
+            if (autopilot == null) throw new ArgumentNullException(nameof(autopilot));
+            pipeline.AddLast("path-frame-decoder", new PathFrameDecoder());
+            pipeline.AddLast("navigation", new NavigationFrameHandler(provider, autopilot));
+            pipeline.AddLast("echo", new EchoServerHandler());
+        }
+
+        /// <summary>Resolves configured authoritative navigation and initializes the singleton controller.</summary>
+        public static NavMeshProviderResolution InitializeNavigation(string? baseDirectory = null)
+        {
+            NavMeshProviderResolution resolution = NavMeshProviderFactory.Resolve(baseDirectory ?? AppContext.BaseDirectory);
+            Autopilot = new AutopilotController(resolution.Provider);
+            return resolution;
         }
 
         // float4 구조체 정의
